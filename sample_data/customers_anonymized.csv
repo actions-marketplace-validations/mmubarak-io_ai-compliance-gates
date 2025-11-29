@@ -1,0 +1,6 @@
+customer_id,customer_hash,purchase_amount,segment,region,tenure_months
+1,a1b2c3d4e5f6,1500.00,premium,UAE,24
+2,g7h8i9j0k1l2,750.50,standard,UAE,12
+3,m3n4o5p6q7r8,2200.00,premium,UAE,36
+4,s9t0u1v2w3x4,450.00,basic,UAE,6
+5,y5z6a7b8c9d0,3100.00,vip,UAE,48

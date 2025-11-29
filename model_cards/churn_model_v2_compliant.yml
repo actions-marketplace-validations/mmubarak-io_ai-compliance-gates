@@ -1,0 +1,39 @@
+# COMPLETE - Will PASS validation
+model_details:
+  name: "Customer Churn Prediction"
+  version: "2.0"
+  date: "2025-01-20"
+  type: "classification"
+  architecture: "XGBoost"
+
+intended_use:
+  primary_uses:
+    - "Predict customer churn probability"
+  out_of_scope_uses:
+    - "Credit scoring"
+    - "Automated decisions without human review"
+  target_users:
+    - "Customer Success Team"
+
+training_data:
+  datasets: ["anonymized_transactions"]
+  preprocessing: ["PII removal", "Normalization"]
+  data_sources: ["Internal CRM"]
+
+evaluation:
+  metrics: ["AUC: 0.87", "F1: 0.80"]
+  datasets: ["Holdout test set"]
+  results:
+    performance: "Meets threshold"
+
+ethical_considerations:
+  bias_analysis: "Tested across segments"
+  fairness_assessment: "Equal performance"
+  harmful_use_mitigation: "Restricted use"
+
+privacy_security:
+  privacy_measures: ["Differential privacy", "No PII"]
+  data_protection: "UAE PDPL compliant"
+  security_measures: ["Encryption", "RBAC"]
+  data_subject_rights: "Deletion within 72 hours"
+  legal_basis: "Legitimate interest"

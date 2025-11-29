@@ -1,0 +1,15 @@
+# INCOMPLETE - Will FAIL validation
+model_details:
+  name: "Customer Churn Prediction"
+  version: "1.0"
+  date: "2025-01-15"
+  type: "classification"
+  architecture: "XGBoost"
+
+intended_use:
+  primary_uses:
+    - "Predict customer churn"
+
+training_data:
+  datasets: ["internal_data"]
+# MISSING: evaluation, ethical_considerations, privacy_security
