@@ -158,6 +158,10 @@ jobs:
         # does not resolve and fails the job at setup.
         uses: aquasecurity/trivy-action@v0.33.1
         with:
+          # trivy-action v0.33.1 defaults to trivy v0.65.0, which has no
+          # GitHub release (404), so its installer exits 1 and the scan is
+          # skipped entirely. Pin a version that actually ships assets.
+          version: v0.74.0
           scan-type: fs
           severity: CRITICAL,HIGH
           exit-code: "1"
