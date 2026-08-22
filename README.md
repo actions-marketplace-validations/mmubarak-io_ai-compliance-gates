@@ -109,14 +109,6 @@ The same principle runs through the rest of the toolkit:
 
 ![ArchiMate architecture for GitOps Compliant AI](docs/architecture.svg)
 
-Modeled in **ArchiMate 3** notation: regulatory drivers (motivation layer)
-shape the policy register (business layer), which is *realized*, not just
-referenced, by the executable CI gates (application layer) running against
-the Terraform-provisioned Azure UAE North platform (technology layer).
-
-Editable source: [`docs/architecture.drawio`](docs/architecture.drawio).
-Open with [draw.io / diagrams.net](https://app.diagrams.net).
-
 ## Try it locally
 
 Requires **Python 3.9+**.
