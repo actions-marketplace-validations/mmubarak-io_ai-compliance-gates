@@ -1,6 +1,6 @@
 # GitOps for Compliant AI
 
-[![CI](https://github.com/MohamedMubarak123/gitops-compliant-ai/actions/workflows/ci.yml/badge.svg)](https://github.com/MohamedMubarak123/gitops-compliant-ai/actions/workflows/ci.yml)
+[![CI](https://github.com/mmubarak-io/gitops-compliant-ai/actions/workflows/ci.yml/badge.svg)](https://github.com/mmubarak-io/gitops-compliant-ai/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/downloads/)
 
@@ -12,7 +12,7 @@ not paragraphs in a policy document nobody checks.
 # .github/workflows/compliance.yml: full adoption in one job
 jobs:
   compliance:
-    uses: MohamedMubarak123/gitops-compliant-ai/.github/workflows/compliance-gates.yml@v1
+    uses: mmubarak-io/gitops-compliant-ai/.github/workflows/compliance-gates.yml@v1
     with:
       data-path: ./data
       model-cards-path: ./model_cards
@@ -46,10 +46,10 @@ Each gate is also a standalone composite action:
 ```yaml
 steps:
   - uses: actions/checkout@v4
-  - uses: MohamedMubarak123/gitops-compliant-ai/.github/actions/pii-scan@v1
+  - uses: mmubarak-io/gitops-compliant-ai/.github/actions/pii-scan@v1
     with:
       path: ./data
-  - uses: MohamedMubarak123/gitops-compliant-ai/.github/actions/policy-check@v1
+  - uses: mmubarak-io/gitops-compliant-ai/.github/actions/policy-check@v1
     with:
       terraform-paths: "infra/*.tf"
 ```
@@ -90,7 +90,7 @@ that examined nothing. If scanning nothing is genuinely expected, opt in
 explicitly:
 
 ```yaml
-- uses: MohamedMubarak123/gitops-compliant-ai/.github/actions/pii-scan@v1
+- uses: mmubarak-io/gitops-compliant-ai/.github/actions/pii-scan@v1
   with:
     path: ./data
     allow-empty: true   # only if an empty data directory is normal for you
@@ -114,7 +114,7 @@ The same principle runs through the rest of the toolkit:
 Requires **Python 3.11+**.
 
 ```bash
-git clone https://github.com/MohamedMubarak123/gitops-compliant-ai.git
+git clone https://github.com/mmubarak-io/gitops-compliant-ai.git
 cd gitops-compliant-ai
 pip install -r requirements.txt
 

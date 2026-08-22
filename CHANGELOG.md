@@ -101,6 +101,19 @@ actually ran.
   pandas 2.3.3 and pandas 3.0.5 pass the full suite on 3.12, so narrowing
   the floor would drop working configurations for no gain.
 
+### Changed (namespace)
+
+- **The project moved to the `mmubarak-io` GitHub namespace.** Every
+  reference a consumer touches changed with it:
+
+  ```yaml
+  uses: mmubarak-io/gitops-compliant-ai/.github/workflows/compliance-gates.yml@v1
+  ```
+
+  GitHub redirects the previous owner path, but that redirect only holds
+  while the old username stays unclaimed, so update any pinned reference
+  rather than relying on it.
+
 ### Security (supply chain)
 
 - **Third-party actions are pinned to commit SHAs**, not tags, in both
@@ -146,4 +159,4 @@ actually ran.
   rendered from the JSON report.
 - Reusable workflow and README examples reference `@v1` instead of `@main`.
 
-[1.0.0]: https://github.com/MohamedMubarak123/gitops-compliant-ai/releases/tag/v1.0.0
+[1.0.0]: https://github.com/mmubarak-io/gitops-compliant-ai/releases/tag/v1.0.0
