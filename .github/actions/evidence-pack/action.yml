@@ -28,6 +28,13 @@ inputs:
     description: "Fail this step when the overall result is not PASS (the gates themselves already fail the build)"
     required: false
     default: "false"
+outputs:
+  content-digest:
+    description: "sha256 of the generated pack. Feed it to actions/attest-build-provenance to turn the pack's own checksum into signed, verifiable provenance."
+    value: ${{ steps.digest.outputs.content-digest }}
+  overall-result:
+    description: "PASS, PARTIAL or FAIL"
+    value: ${{ steps.digest.outputs.overall-result }}
 runs:
   using: composite
   steps:
@@ -69,6 +76,25 @@ runs:
           ARGS+=(--fail-on-violation)
         fi
         python "$GENERATOR" "${ARGS[@]}"
+    - name: Verify and expose the pack digest
+      id: digest
+      shell: bash
+      # Re-reads what was just written and checks it against its own recorded
+      # digest, so a truncated or half-written pack is caught here rather than
+      # by the auditor who eventually opens it.
+      env:
+        INPUT_OUTPUT_DIR: ${{ inputs.output-dir }}
+        GENERATOR: ${{ github.action_path }}/../../../scripts/generate_evidence_pack.py
+      run: |
+        set -euo pipefail
+        PACK="$INPUT_OUTPUT_DIR/evidence_pack.json"
+        python "$GENERATOR" --verify "$PACK"
+        python - "$PACK" >> "$GITHUB_OUTPUT" <<'PY'
+        import json, sys
+        pack = json.load(open(sys.argv[1]))
+        print(f"content-digest={pack['integrity']['content_digest']}")
+        print(f"overall-result={pack['overall_result']}")
+        PY
     - name: Publish job summary
       shell: bash
       env:

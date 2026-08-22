@@ -12,14 +12,15 @@ name: Compliance Gates (Reusable)
 #
 # Every gate is opt-in: leave an input empty and that gate is skipped.
 # A gate that runs but finds nothing to check fails as misconfigured
-# rather than reporting success. Set the matching allow-empty input
-# if scanning nothing is genuinely expected.
+# rather than reporting success, and so does one that can only cover part
+# of what it was pointed at. Set allow-empty / allow-unscanned if either
+# is genuinely expected.
 
 on:
   workflow_call:
     inputs:
       data-path:
-        description: "CSV file or directory to scan for PII"
+        description: "Data file or directory to scan for PII (CSV, TSV, JSON, JSON Lines, Parquet)"
         type: string
         required: false
         default: ""
@@ -40,6 +41,11 @@ on:
         default: ""
       allow-empty:
         description: "Treat 'nothing found to check' as a pass instead of a misconfiguration"
+        type: boolean
+        required: false
+        default: false
+      allow-unscanned:
+        description: "Continue when the data path holds files the PII scanner cannot read. The gap is recorded and the evidence pack reports that gate as PARTIAL."
         type: boolean
         required: false
         default: false
@@ -77,6 +83,7 @@ jobs:
           path: ${{ inputs.data-path }}
           config: ${{ inputs.config }}
           allow-empty: ${{ inputs.allow-empty }}
+          allow-unscanned: ${{ inputs.allow-unscanned }}
 
       - name: Model Card Validation (POL-GOV-002)
         if: inputs.model-cards-path != ''

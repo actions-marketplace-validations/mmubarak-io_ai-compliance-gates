@@ -5,7 +5,7 @@ branding:
   color: red
 inputs:
   path:
-    description: "File or directory of CSVs to scan (directories are searched recursively)"
+    description: "File or directory to scan (directories are searched recursively). Reads CSV, TSV, JSON, JSON Lines and Parquet, including compressed variants."
     required: true
   config:
     description: "Optional compliance.config.yml to extend/override patterns"
@@ -16,7 +16,11 @@ inputs:
     required: false
     default: "reports/pii_scan.json"
   allow-empty:
-    description: "Pass when no CSV files are found instead of failing as misconfigured"
+    description: "Pass when no readable data files are found instead of failing as misconfigured"
+    required: false
+    default: "false"
+  allow-unscanned:
+    description: "Continue when the target holds data files the scanner cannot read (a .xlsx, say). The gap stays recorded in the report and marks the evidence pack PARTIAL."
     required: false
     default: "false"
 runs:
@@ -41,6 +45,7 @@ runs:
         INPUT_CONFIG: ${{ inputs.config }}
         INPUT_OUTPUT_FILE: ${{ inputs.output-file }}
         INPUT_ALLOW_EMPTY: ${{ inputs.allow-empty }}
+        INPUT_ALLOW_UNSCANNED: ${{ inputs.allow-unscanned }}
         SCANNER: ${{ github.action_path }}/../../../scripts/pii_scanner.py
       run: |
         set -euo pipefail
@@ -51,5 +56,8 @@ runs:
         fi
         if [ "$INPUT_ALLOW_EMPTY" = "true" ]; then
           ARGS+=(--allow-empty)
+        fi
+        if [ "$INPUT_ALLOW_UNSCANNED" = "true" ]; then
+          ARGS+=(--allow-unscanned)
         fi
         python "$SCANNER" "${ARGS[@]}"

@@ -14,6 +14,13 @@ pii_scan:
   # Rows sampled per column for value scanning
   sample_rows: 50
 
+  # Formats the scanner opens. Defaults to everything it can read:
+  # .csv .tsv .json .jsonl .ndjson .parquet, plus .gz/.bz2/.xz/.zst
+  # variants of those. Narrowing this list is a coverage decision, not a
+  # filter: the files it excludes are reported as unscanned and block the
+  # gate unless you also pass --allow-unscanned.
+  # scan_extensions: [".csv", ".parquet"]
+
   # Add organization- or jurisdiction-specific patterns.
   # Example: KSA national ID (Iqama) for teams under KSA PDPL.
   custom_patterns:
@@ -54,3 +61,10 @@ model_cards:
 # (misconfigured) rather than reporting success. If an empty directory
 # is normal for your repo, pass --allow-empty on the CLI or set
 # `allow-empty: true` on the action.
+#
+# Partial coverage: a scan target holding data the scanner cannot read
+# (a .xlsx, an .avro) also exits 2. Reporting a pass would claim coverage
+# over files it never opened. Pass --allow-unscanned (or set
+# `allow-unscanned: true` on the action) to record the gap and continue;
+# the skipped files stay named in the report and mark that gate PARTIAL
+# in the evidence pack.

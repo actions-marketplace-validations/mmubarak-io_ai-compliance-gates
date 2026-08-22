@@ -8,17 +8,25 @@ UAE-specific recognizers that generic scanners miss:
   - UAE phone numbers +971-5X / 05X mobile and landline formats
   - UAE IBAN          AE + 21 digits
 
+Reads every tabular format pandas can: CSV, TSV, JSON, JSON Lines and
+Parquet, including .gz/.bz2/.xz/.zst variants.
+
 Works standalone (regex engine) and upgrades automatically to
 Microsoft Presidio NLP detection when installed.
 
 Exit codes:
   0  no PII found
   1  PII found (policy violation; the gate blocks)
-  2  misconfiguration (bad config, or nothing to scan)
+  2  misconfiguration (bad config, nothing to scan, or data the
+     scanner cannot read)
 
 Exit code 2 matters: a gate that scans zero files must not report
 success, or a mistyped path becomes a green check that looks like
-proof of compliance.
+proof of compliance. Partial coverage is the same failure wearing a
+different hat: a directory of Parquet shards next to one CSV used to
+scan the CSV and report a clean pass for the whole directory. Files
+the scanner cannot read are now listed as unscanned and block the
+gate unless --allow-unscanned is passed.
 """
 
 from __future__ import annotations
@@ -70,6 +78,64 @@ UAE_PATTERNS = {
         "description": "Email address",
     },
 }
+
+# ---------------------------------------------------------------------------
+# Formats the scanner can read
+# ---------------------------------------------------------------------------
+# A gate that silently ignores the formats it cannot parse reports a clean
+# pass for data it never opened, so what is readable is declared explicitly
+# and everything else is accounted for as a coverage gap.
+READERS = {
+    ".csv": lambda p: pd.read_csv(p),
+    ".tsv": lambda p: pd.read_csv(p, sep="\t"),
+    ".json": lambda p: pd.read_json(p),
+    ".jsonl": lambda p: pd.read_json(p, lines=True),
+    ".ndjson": lambda p: pd.read_json(p, lines=True),
+    ".parquet": lambda p: pd.read_parquet(p),
+}
+
+# pandas infers these from the filename, so they wrap a real format rather
+# than being one: data.jsonl.gz is JSON Lines, not an unreadable archive.
+COMPRESSION_SUFFIXES = {".gz", ".bz2", ".xz", ".zst", ".zip"}
+
+# Formats that hold tabular data the scanner has no reader for. Finding one
+# under a scan target is a coverage gap to report, not a file to ignore.
+# Bare archives are here too: whatever a data.zip holds, the gate did not
+# look inside it.
+UNREADABLE_DATA_SUFFIXES = {
+    ".xlsx", ".xls", ".xlsm", ".feather", ".orc", ".avro", ".arrow",
+    ".dta", ".sav", ".sas7bdat", ".sqlite", ".db", ".tar",
+} | COMPRESSION_SUFFIXES
+
+
+def _data_suffix(path: Path) -> str:
+    """The format-bearing suffix, looking through any compression wrapper.
+
+    data.csv.gz is a CSV. data.zip and data.tar.gz are archives whose contents
+    the scanner never sees, so they keep their own suffix and land in
+    UNREADABLE_DATA_SUFFIXES instead of falling through unclassified.
+    """
+    suffixes = [s.lower() for s in path.suffixes]
+    if not suffixes:
+        return ""
+    if suffixes[-1] in COMPRESSION_SUFFIXES:
+        inner = suffixes[-2] if len(suffixes) > 1 else ""
+        return inner if inner in READERS else suffixes[-1]
+    return suffixes[-1]
+
+
+def _normalize_ext(ext: str) -> str:
+    ext = str(ext).lower().strip()
+    return ext if ext.startswith(".") else f".{ext}"
+
+
+def read_table(path: Path):
+    """Load a supported tabular file into a DataFrame."""
+    reader = READERS.get(_data_suffix(path))
+    if reader is None:
+        raise ValueError(f"no reader for '{path.name}': unsupported format")
+    return reader(path)
+
 
 # Column-name heuristics (fast first pass)
 PII_COLUMN_HINTS = {
@@ -123,6 +189,20 @@ def _validate_pii_config(user: dict) -> list:
             if not isinstance(risk, int) or isinstance(risk, bool) or not 1 <= risk <= 10:
                 problems.append(f"pii_scan.column_hints.{hint} must be an integer 1-10 (got {risk!r})")
 
+    exts = user.get("scan_extensions")
+    if exts is not None:
+        if not isinstance(exts, list) or not all(isinstance(e, str) for e in exts):
+            problems.append("pii_scan.scan_extensions must be a list of file extensions, e.g. ['.csv', '.parquet']")
+        elif not exts:
+            problems.append("pii_scan.scan_extensions is empty, which would scan nothing")
+        else:
+            unknown = sorted({e for e in exts if _normalize_ext(e) not in READERS})
+            if unknown:
+                problems.append(
+                    "pii_scan.scan_extensions contains formats the scanner cannot read: "
+                    f"{', '.join(unknown)} (supported: {', '.join(sorted(READERS))})"
+                )
+
     rows = user.get("sample_rows", 50)
     if not isinstance(rows, int) or isinstance(rows, bool) or rows < 1:
         problems.append(f"pii_scan.sample_rows must be a positive integer (got {rows!r})")
@@ -143,6 +223,7 @@ def load_config(path: str | None) -> dict:
         "column_hints": dict(PII_COLUMN_HINTS),
         "sample_rows": 50,
         "disabled": set(),
+        "scan_extensions": set(READERS),
     }
     if not path:
         return cfg
@@ -171,6 +252,8 @@ def load_config(path: str | None) -> dict:
         cfg["disabled"].add(entity)
     cfg["column_hints"].update(user.get("column_hints") or {})
     cfg["sample_rows"] = user.get("sample_rows", cfg["sample_rows"])
+    if user.get("scan_extensions") is not None:
+        cfg["scan_extensions"] = {_normalize_ext(e) for e in user["scan_extensions"]}
     return cfg
 
 
@@ -189,9 +272,26 @@ def build_analyzer(patterns: dict):
     return analyzer
 
 
-def discover_files(path: Path) -> list:
-    """CSV files to scan. A file is used as-is; a directory is searched."""
-    return sorted(path.rglob("*.csv")) if path.is_dir() else [path]
+def discover_files(path: Path, extensions: set | None = None) -> tuple:
+    """Split a scan target into (files to scan, files left unscanned).
+
+    A file is used as-is; a directory is searched recursively. Data files the
+    scanner has no reader for -- or whose format the config excluded -- are
+    returned as unscanned rather than dropped, because a scan that skipped
+    half the directory must not be reported as a scan of the directory.
+    """
+    allowed = set(READERS) if extensions is None else extensions
+    if not path.is_dir():
+        return ([path], []) if _data_suffix(path) in allowed else ([], [path])
+
+    to_scan, unscanned = [], []
+    for f in sorted(p for p in path.rglob("*") if p.is_file()):
+        ext = _data_suffix(f)
+        if ext in allowed:
+            to_scan.append(f)
+        elif ext in READERS or ext in UNREADABLE_DATA_SUFFIXES:
+            unscanned.append(f)
+    return to_scan, unscanned
 
 
 class PIIScanner:
@@ -266,7 +366,7 @@ class PIIScanner:
         return min(sum(by_column.values()), 100)
 
     # -- public -------------------------------------------------------------
-    def scan_csv(self, path: Path) -> dict:
+    def scan_file(self, path: Path) -> dict:
         result = {
             "file": str(path),
             "policy_id": "POL-PRIV-001",
@@ -276,7 +376,7 @@ class PIIScanner:
             "engine": "presidio" if PRESIDIO else "regex",
         }
         try:
-            df = pd.read_csv(path)
+            df = read_table(path)
 
             # Pass 1: column-name heuristics
             for col in df.columns:
@@ -304,6 +404,9 @@ class PIIScanner:
             result["risk_score"] = 100
         return result
 
+    # Kept for the v1 Python API, which predates non-CSV support.
+    scan_csv = scan_file
+
 
 def _fail(message: str, output_format: str, title: str) -> None:
     if output_format == "github":
@@ -319,7 +422,10 @@ def main():
     parser.add_argument("--output-file", help="Write JSON results to this file (for evidence pack)")
     parser.add_argument("--config", help="Path to compliance.config.yml (extends/overrides built-in patterns)")
     parser.add_argument("--allow-empty", action="store_true",
-                        help="Treat 'no CSV files found' as a pass instead of a misconfiguration")
+                        help="Treat 'no data files found' as a pass instead of a misconfiguration")
+    parser.add_argument("--allow-unscanned", action="store_true",
+                        help="Proceed when the target holds data files the scanner cannot read. "
+                             "They stay listed in the report as a coverage gap.")
     args = parser.parse_args()
 
     try:
@@ -334,24 +440,42 @@ def main():
         disabled=cfg["disabled"],
     )
     path = Path(args.path)
-    files = discover_files(path)
+    files, unscanned = discover_files(path, cfg["scan_extensions"])
 
-    if not files and not args.allow_empty:
+    if not files and not unscanned and not args.allow_empty:
         _fail(
-            f"No CSV files found under '{path}'. Refusing to report success for a scan "
-            f"that examined nothing. Pass --allow-empty if this is intentional.",
+            f"No readable data files found under '{path}'. Refusing to report success for a scan "
+            f"that examined nothing. Supported formats: {', '.join(sorted(READERS))}. "
+            f"Pass --allow-empty if this is intentional.",
             args.output_format,
             "PII Scan Misconfigured (POL-PRIV-001)",
         )
 
-    results = [scanner.scan_csv(f) for f in files]
+    if unscanned and not args.allow_unscanned:
+        shown = ", ".join(str(f) for f in unscanned[:10])
+        more = f" (+{len(unscanned) - 10} more)" if len(unscanned) > 10 else ""
+        _fail(
+            f"{len(unscanned)} data file(s) under '{path}' cannot be scanned: {shown}{more}. "
+            f"Passing the gate would claim coverage this scan does not have. Convert them to a "
+            f"supported format ({', '.join(sorted(READERS))}), point the gate at a narrower path, "
+            f"or pass --allow-unscanned to record the gap and continue.",
+            args.output_format,
+            "PII Scan Coverage Gap (POL-PRIV-001)",
+        )
+
+    results = [scanner.scan_file(f) for f in files]
 
     pii_files = sum(1 for r in results if r.get("pii_found"))
     report = {
         "policy_id": "POL-PRIV-001",
         "check": "pii_scan",
         "engine": "presidio" if PRESIDIO else "regex",
-        "summary": {"files_scanned": len(results), "files_with_pii": pii_files},
+        "summary": {
+            "files_scanned": len(results),
+            "files_with_pii": pii_files,
+            "files_unscanned": len(unscanned),
+        },
+        "unscanned": [str(f) for f in unscanned],
         "results": results,
     }
 
@@ -361,10 +485,13 @@ def main():
     if args.output_format == "json":
         print(json.dumps(report, indent=2))
     elif args.output_format == "github":
+        if unscanned:
+            print(f"::warning title=PII Scan Coverage Gap (POL-PRIV-001)::{len(unscanned)} data "
+                  f"file(s) were not scanned; this run is not evidence of compliance for them")
         if pii_files > 0:
             print(f"::error title=PII Detected (POL-PRIV-001)::{pii_files} file(s) contain PII")
         else:
-            print("::notice title=PII Scan Passed::No PII found")
+            print(f"::notice title=PII Scan Passed::No PII found in {len(results)} file(s)")
     else:
         print("\n" + "=" * 50)
         print(f"🔍 PII SCAN RESULTS  (engine: {report['engine']})")
@@ -380,6 +507,13 @@ def main():
                     entities[e] = entities.get(e, 0) + f.get("matches", 1)
                 for e, c in sorted(entities.items()):
                     print(f"   - {e}: {c}")
+        if unscanned:
+            print(f"\n⚠️  NOT SCANNED ({len(unscanned)} file(s) in an unsupported format):")
+            for f in unscanned[:10]:
+                print(f"   - {f}")
+            if len(unscanned) > 10:
+                print(f"   ... and {len(unscanned) - 10} more")
+            print("   This run is not evidence of compliance for these files.")
         print("\n" + "=" * 50)
         print("❌ DEPLOYMENT BLOCKED" if pii_files else "✅ READY TO DEPLOY")
         print("=" * 50)

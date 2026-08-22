@@ -5,6 +5,7 @@ a gate that reports success while checking nothing is worse than no gate,
 because it produces an evidence pack that reads as proof of compliance.
 """
 
+import hashlib
 import json
 import re
 import shutil
@@ -20,7 +21,8 @@ REPO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO / "scripts"))
 
 from pii_scanner import (  # noqa: E402
-    EXIT_MISCONFIGURED, EXIT_OK, EXIT_VIOLATION, ConfigError, PIIScanner, load_config,
+    EXIT_MISCONFIGURED, EXIT_OK, EXIT_VIOLATION, READERS, ConfigError, PIIScanner,
+    discover_files, load_config,
 )
 import model_card_validator as mcv  # noqa: E402
 
@@ -96,6 +98,87 @@ class TestPIIScanner:
         r = PIIScanner().scan_csv(f)
         assert r["risk_score"] == 9  # not 9 (name) + 9 (value)
 
+    # -- regression: scan coverage -----------------------------------------
+    def test_scans_every_supported_format(self, tmp_path):
+        """Detection must not be CSV-only: the same Emirates ID has to be found
+        whatever tabular format the dataset happens to be stored in."""
+        eid = "784-1985-1234567-1"
+        written = {
+            "d.csv": "id,doc\n1,%s\n" % eid,
+            "d.tsv": "id\tdoc\n1\t%s\n" % eid,
+            "d.json": json.dumps([{"id": 1, "doc": eid}]),
+            "d.jsonl": json.dumps({"id": 1, "doc": eid}) + "\n",
+            "d.ndjson": json.dumps({"id": 1, "doc": eid}) + "\n",
+        }
+        for name, body in written.items():
+            f = tmp_path / name
+            f.write_text(body)
+            r = PIIScanner().scan_file(f)
+            assert r["pii_found"], f"{name} was not scanned: {r}"
+            assert any(x["entity"] == "AE_EMIRATES_ID" for x in r["findings"]), name
+
+    def test_scans_compressed_data(self, tmp_path):
+        """A .csv.gz is a CSV, not an unreadable archive."""
+        import gzip
+        f = tmp_path / "d.csv.gz"
+        f.write_bytes(gzip.compress(b"id,doc\n1,784-1985-1234567-1\n"))
+        assert PIIScanner().scan_file(f)["pii_found"]
+
+    def test_scans_parquet(self, tmp_path):
+        pytest.importorskip("pyarrow")
+        import pandas as pd
+        f = tmp_path / "d.parquet"
+        pd.DataFrame({"doc": ["784-1985-1234567-1"]}).to_parquet(f)
+        assert PIIScanner().scan_file(f)["pii_found"]
+
+    def test_unreadable_format_fails_closed(self, tmp_path):
+        """A file the scanner cannot parse is a finding, never a silent clean."""
+        f = tmp_path / "d.xlsx"
+        f.write_bytes(b"not really a spreadsheet")
+        r = PIIScanner().scan_file(f)
+        assert r["pii_found"] and r["risk_score"] == 100 and "error" in r
+
+    def test_scan_csv_alias_preserved(self, tmp_path):
+        """The v1 Python API kept working when non-CSV support landed."""
+        f = tmp_path / "d.csv"
+        f.write_text("id,doc\n1,784-1985-1234567-1\n")
+        assert PIIScanner().scan_csv(f)["pii_found"]
+
+    # -- regression: discovery ---------------------------------------------
+    def test_discovery_separates_scannable_from_unscannable(self, tmp_path):
+        (tmp_path / "a.csv").write_text("x\n1\n")
+        (tmp_path / "b.jsonl").write_text('{"x": 1}\n')
+        (tmp_path / "c.xlsx").write_bytes(b"x")
+        (tmp_path / "notes.md").write_text("not data")
+        to_scan, unscanned = discover_files(tmp_path)
+        assert {f.name for f in to_scan} == {"a.csv", "b.jsonl"}
+        assert {f.name for f in unscanned} == {"c.xlsx"}  # notes.md is not data
+
+    def test_config_narrowing_is_reported_as_a_gap(self, tmp_path):
+        """Restricting scan_extensions shrinks coverage, so the files it excludes
+        are reported as unscanned rather than quietly dropped."""
+        (tmp_path / "a.csv").write_text("x\n1\n")
+        (tmp_path / "b.jsonl").write_text('{"x": 1}\n')
+        to_scan, unscanned = discover_files(tmp_path, {".csv"})
+        assert [f.name for f in to_scan] == ["a.csv"]
+        assert [f.name for f in unscanned] == ["b.jsonl"]
+
+    def test_archives_are_a_coverage_gap_not_a_blind_spot(self, tmp_path):
+        """A compressed CSV is a CSV; a bare archive is data nobody looked at.
+        Neither may pass unnoticed."""
+        import gzip
+        (tmp_path / "shard.csv.gz").write_bytes(gzip.compress(b"x\n1\n"))
+        (tmp_path / "dataset.zip").write_bytes(b"PK\x03\x04")
+        (tmp_path / "dump.tar.gz").write_bytes(b"\x1f\x8b")
+        to_scan, unscanned = discover_files(tmp_path)
+        assert [f.name for f in to_scan] == ["shard.csv.gz"]
+        assert {f.name for f in unscanned} == {"dataset.zip", "dump.tar.gz"}
+
+    def test_explicit_unreadable_file_is_unscanned_not_scanned(self, tmp_path):
+        f = tmp_path / "d.xlsx"
+        f.write_bytes(b"x")
+        assert discover_files(f) == ([], [f])
+
     # -- regression: config handling ---------------------------------------
     def test_config_adds_custom_pattern(self, tmp_path):
         cfg = tmp_path / "compliance.config.yml"
@@ -135,6 +218,9 @@ class TestPIIScanner:
         ({"disable_patterns": "AE_IBAN"}, "must be a list"),
         ({"column_hints": {"x": "high"}}, "must be an integer 1-10"),
         ({"sample_rows": 0}, "must be a positive integer"),
+        ({"scan_extensions": ".csv"}, "must be a list of file extensions"),
+        ({"scan_extensions": []}, "would scan nothing"),
+        ({"scan_extensions": [".xlsx"]}, "cannot read"),
     ])
     def test_invalid_config_raises_clear_error(self, tmp_path, bad, expect):
         cfg = tmp_path / "c.yml"
@@ -146,6 +232,14 @@ class TestPIIScanner:
     def test_missing_config_file_raises(self, tmp_path):
         with pytest.raises(ConfigError, match="not found"):
             load_config(str(tmp_path / "nope.yml"))
+
+    def test_scan_extensions_default_to_every_reader(self):
+        assert load_config(None)["scan_extensions"] == set(READERS)
+
+    def test_scan_extensions_normalized(self, tmp_path):
+        cfg = tmp_path / "c.yml"
+        cfg.write_text(yaml.safe_dump({"pii_scan": {"scan_extensions": ["CSV", ".Parquet"]}}))
+        assert load_config(str(cfg))["scan_extensions"] == {".csv", ".parquet"}
 
 
 # ---------------------------------------------------------------------------
@@ -170,7 +264,7 @@ class TestPIIScannerExitCodes:
         (tmp_path / "empty").mkdir()
         r = run_script("pii_scanner.py", "--path", str(tmp_path / "empty"))
         assert r.returncode == EXIT_MISCONFIGURED
-        assert "No CSV files found" in r.stderr
+        assert "No readable data files found" in r.stderr
 
     def test_empty_directory_allowed_with_flag(self, tmp_path):
         (tmp_path / "empty").mkdir()
@@ -191,6 +285,42 @@ class TestPIIScannerExitCodes:
         (nested / "d.csv").write_text("doc\n784-1985-1234567-1\n")
         r = run_script("pii_scanner.py", "--path", str(tmp_path))
         assert r.returncode == EXIT_VIOLATION
+
+    def test_pii_beside_a_clean_csv_is_not_a_pass(self, tmp_path):
+        """The regression the coverage rule exists for: a directory holding one
+        clean CSV and a pile of JSONL shards used to scan only the CSV, find
+        nothing, and return a green check for the whole directory."""
+        data = tmp_path / "data"
+        data.mkdir()
+        (data / "clean.csv").write_text("id,note\n1,hello\n")
+        for i in range(3):
+            (data / f"shard_{i}.jsonl").write_text(json.dumps({"eid": "784-1985-1234567-1"}) + "\n")
+        r = run_script("pii_scanner.py", "--path", str(data))
+        assert r.returncode == EXIT_VIOLATION, r.stdout
+
+    def test_unreadable_data_blocks_the_gate(self, tmp_path):
+        """Data in a format the scanner cannot read must not pass silently."""
+        data = tmp_path / "data"
+        data.mkdir()
+        (data / "clean.csv").write_text("id\n1\n")
+        (data / "legacy.xlsx").write_bytes(b"not a spreadsheet")
+        r = run_script("pii_scanner.py", "--path", str(data))
+        assert r.returncode == EXIT_MISCONFIGURED
+        assert "cannot be scanned" in r.stderr
+
+    def test_allow_unscanned_records_the_gap(self, tmp_path):
+        """Opting out of the block still leaves the gap on the record."""
+        data = tmp_path / "data"
+        data.mkdir()
+        (data / "clean.csv").write_text("id\n1\n")
+        (data / "legacy.xlsx").write_bytes(b"not a spreadsheet")
+        out = tmp_path / "pii.json"
+        r = run_script("pii_scanner.py", "--path", str(data), "--allow-unscanned",
+                       "--output-format", "json", "--output-file", str(out))
+        assert r.returncode == EXIT_OK, r.stderr
+        report = json.loads(out.read_text())
+        assert report["summary"]["files_unscanned"] == 1
+        assert report["unscanned"] == [str(data / "legacy.xlsx")]
 
 
 # ---------------------------------------------------------------------------
@@ -353,6 +483,67 @@ class TestEvidencePack:
         pii = next(g for g in pack["gates"] if g["gate"] == "PII Scan")
         assert pii["result"] == "NO_DATA"
         assert pack["overall_result"] == "FAIL"
+
+    def test_partial_coverage_is_not_a_pass(self, tmp_path):
+        """A gate that ran but skipped part of its target must not read as clean."""
+        report = tmp_path / "pii.json"
+        report.write_text(json.dumps({
+            "summary": {"files_scanned": 1, "files_with_pii": 0, "files_unscanned": 2},
+            "unscanned": ["a.xlsx", "b.xlsx"],
+        }))
+        out = tmp_path / "evidence"
+        run_script("generate_evidence_pack.py", "--pii-report", str(report), "--output-dir", str(out))
+        pack = self._pack(out)
+        assert next(g for g in pack["gates"] if g["gate"] == "PII Scan")["result"] == "PARTIAL"
+        assert pack["overall_result"] == "PARTIAL"
+        assert "covered less than their target" in (out / "evidence_pack.md").read_text()
+
+    # -- regression: tamper-evidence ---------------------------------------
+    def test_pack_is_pinned_to_its_source_reports(self, tmp_path):
+        """Each gate records the digest of the report it summarized, so a pack
+        cannot be paired with a different set of gate outputs."""
+        report = tmp_path / "pii.json"
+        report.write_text(json.dumps({"summary": {"files_scanned": 1, "files_with_pii": 0}}))
+        out = tmp_path / "evidence"
+        run_script("generate_evidence_pack.py", "--pii-report", str(report), "--output-dir", str(out))
+        pii = next(g for g in self._pack(out)["gates"] if g["gate"] == "PII Scan")
+        assert pii["report_sha256"] == hashlib.sha256(report.read_bytes()).hexdigest()
+
+    def test_pack_verifies_against_its_own_digest(self, tmp_path):
+        out = tmp_path / "evidence"
+        run_script("generate_evidence_pack.py", "--output-dir", str(out))
+        r = run_script("generate_evidence_pack.py", "--verify", str(out / "evidence_pack.json"))
+        assert r.returncode == EXIT_OK, r.stderr
+
+    def test_edited_pack_fails_verification(self, tmp_path):
+        """An evidence pack an auditor reads must not be quietly editable."""
+        out = tmp_path / "evidence"
+        run_script("generate_evidence_pack.py", "--output-dir", str(out))
+        pack_file = out / "evidence_pack.json"
+        pack = json.loads(pack_file.read_text())
+        pack["overall_result"] = "PASS"
+        pack_file.write_text(json.dumps(pack, indent=2))
+        r = run_script("generate_evidence_pack.py", "--verify", str(pack_file))
+        assert r.returncode == EXIT_VIOLATION
+        assert "TAMPERED" in r.stderr
+
+    def test_changed_source_report_fails_verification(self, tmp_path):
+        report = tmp_path / "pii.json"
+        report.write_text(json.dumps({"summary": {"files_scanned": 1, "files_with_pii": 1}}))
+        out = tmp_path / "evidence"
+        run_script("generate_evidence_pack.py", "--pii-report", str(report), "--output-dir", str(out))
+        report.write_text(json.dumps({"summary": {"files_scanned": 1, "files_with_pii": 0}}))
+        r = run_script("generate_evidence_pack.py", "--verify", str(out / "evidence_pack.json"))
+        assert r.returncode == EXIT_VIOLATION
+        assert "changed since generation" in r.stderr
+
+    def test_pack_without_a_digest_is_unverifiable(self, tmp_path):
+        """A pre-1.2 pack must report as unverifiable, not as verified."""
+        legacy = tmp_path / "old_pack.json"
+        legacy.write_text(json.dumps({"evidence_pack_version": "1.1", "overall_result": "PASS"}))
+        r = run_script("generate_evidence_pack.py", "--verify", str(legacy))
+        assert r.returncode == EXIT_VIOLATION
+        assert "UNVERIFIABLE" in r.stderr
 
     def test_fail_on_violation_flag(self, tmp_path):
         out = tmp_path / "evidence"

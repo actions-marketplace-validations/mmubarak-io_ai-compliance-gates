@@ -120,6 +120,38 @@ jobs:
           fi
           echo "✅ Gates fail closed on an empty scan target"
 
+      - name: PII gate refuses to pass on partial coverage
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/partial-scan
+          printf 'id,note\n1,hello\n' > /tmp/partial-scan/clean.csv
+          printf 'not a spreadsheet' > /tmp/partial-scan/legacy.xlsx
+          rc=0; python scripts/pii_scanner.py --path /tmp/partial-scan || rc=$?
+          if [ "$rc" -ne 2 ]; then
+            echo "::error::Unreadable data must exit 2 (coverage gap), got $rc"; exit 1
+          fi
+          # Opting in continues, but the gap has to stay on the record.
+          python scripts/pii_scanner.py --path /tmp/partial-scan --allow-unscanned \
+            --output-format json --output-file /tmp/partial-scan-report.json > /dev/null
+          python - <<'PY'
+          import json, sys
+          r = json.load(open("/tmp/partial-scan-report.json"))
+          if r["summary"]["files_unscanned"] != 1 or not r["unscanned"]:
+              sys.exit(f"::error::coverage gap missing from the report: {r['summary']}")
+          PY
+          echo "✅ Gate fails closed on data it cannot read"
+
+      - name: Dirty data hidden in a non-CSV format is still caught
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/jsonl-scan
+          printf 'id,note\n1,hello\n' > /tmp/jsonl-scan/clean.csv
+          echo '{"eid": "784-1985-1234567-1"}' > /tmp/jsonl-scan/train.jsonl
+          if python scripts/pii_scanner.py --path /tmp/jsonl-scan --output-format github; then
+            echo "::error::Emirates ID in a JSONL shard should have been blocked"; exit 1
+          fi
+          echo "✅ Gate scans past the first CSV it finds"
+
       - name: Evidence Pack (POL-GOV-003)
         if: always()
         uses: ./.github/actions/evidence-pack

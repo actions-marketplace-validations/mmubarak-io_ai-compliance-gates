@@ -38,7 +38,7 @@ dataset contains an Emirates ID, it never reaches training.
 
 | Action | What it enforces | Regulation |
 |--------|------------------|------------|
-| `pii-scan` | Datasets are free of PII, including **UAE-specific patterns** (Emirates ID, +971 phones, AE IBANs) that generic scanners miss | UAE PDPL Art. 20, GDPR Art. 32 |
+| `pii-scan` | Datasets are free of PII, including **UAE-specific patterns** (Emirates ID, +971 phones, AE IBANs) that generic scanners miss. Reads CSV, TSV, JSON, JSON Lines and Parquet, compressed or not | UAE PDPL Art. 20, GDPR Art. 32 |
 | `model-card-check` | AI documentation is complete; every missing field cites the **EU AI Act article** it fails | EU AI Act Annex IV, Art. 9/13/14 |
 | `policy-check` | Terraform satisfies the policy register via **OPA/Conftest**: TLS 1.2, no public access, UAE-only regions, RBAC, audit logging, retention | UAE PDPL Art. 9, 20, 22-23; GDPR Art. 5, 30, 32 |
 | `evidence-pack` | Every run emits an **auditor-facing artifact**: what was checked, against which regulation, at which commit | GDPR Art. 5(2), EU AI Act Art. 12 |
@@ -98,6 +98,23 @@ explicitly:
     allow-empty: true   # only if an empty data directory is normal for you
 ```
 
+**Partial coverage fails the same way.** A PII gate pointed at a directory
+holding one CSV and fifty Parquet shards used to scan the CSV, find nothing,
+and return green for the whole directory, a fail-open wearing the costume of
+a pass. The scanner reads every tabular format pandas can (CSV, TSV, JSON,
+JSON Lines, Parquet, compressed or not), and anything it still cannot open is
+listed as unscanned and blocks the gate. Opt out only deliberately:
+
+```yaml
+- uses: mmubarak-io/ai-compliance-gates/.github/actions/pii-scan@v1
+  with:
+    path: ./data
+    allow-unscanned: true   # records the gap instead of blocking on it
+```
+
+Files skipped that way stay named in the report and mark their gate
+`PARTIAL` in the evidence pack. Never `PASS`.
+
 The same principle runs through the rest of the toolkit:
 
 - An unreadable or malformed input file is treated as a **finding**, not as
@@ -106,6 +123,21 @@ The same principle runs through the rest of the toolkit:
   crashed check can't quietly disappear from the audit artifact.
 - A malformed `compliance.config.yml` stops the run with a message naming
   the offending key, rather than being silently ignored.
+- The evidence pack carries a `sha256` of its own content and of every gate
+  report it was built from. `--verify` recomputes both, so a pack edited
+  after generation, or paired with different gate outputs, no longer
+  verifies:
+
+  ```bash
+  python scripts/generate_evidence_pack.py --verify evidence/evidence_pack.json
+  ```
+
+  This is a checksum, not a signature: it detects post-hoc edits, not who
+  made them. The `evidence-pack` action exposes the digest as a
+  `content-digest` output so you can feed it to
+  [`actions/attest-build-provenance`](https://github.com/actions/attest-build-provenance)
+  and get signed provenance today; native Sigstore attestation is on the
+  roadmap.
 
 ## Architecture
 
@@ -155,6 +187,18 @@ platform (storage with TLS 1.2/private access/RBAC, Key Vault, Log
 Analytics audit trail, compliance tags) that passes the full policy pack.
 Use it as a starting point or bring your own Terraform; the `policy-check`
 gate works against any HCL.
+
+It is synthetic reference material built from public sources. The `azurerm_*`
+arguments come from the [Terraform AzureRM provider
+registry](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs),
+and `uaenorth`/`uaecentral` are Azure's [published region
+names](https://learn.microsoft.com/azure/reliability/regions-list). UAE North
+appears because POL-PRIV-003 (data residency, UAE PDPL Art. 22-23) is only
+enforceable against a concrete region. It is the executable form of a public
+regulatory requirement, not a description of anyone's environment. The module
+carries no subscription, tenant or resource identifiers, and its defaults
+(`compliantml`, `dev`) are placeholders: it exists so the policy pack has a
+realistic target to run against.
 
 ## Repository layout
 

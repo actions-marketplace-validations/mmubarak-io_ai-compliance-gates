@@ -1,6 +1,12 @@
 # ============================================
-# Compliant ML Platform - Azure UAE
+# Compliant ML Platform - Azure UAE (reference module)
 # ============================================
+# Synthetic reference material written from public sources: azurerm_*
+# arguments from the Terraform AzureRM provider registry, uaenorth from
+# Azure's published region list. It exists so the policy pack has a
+# realistic target to run against. It carries no subscription, tenant or
+# resource identifiers and describes no real environment.
+#
 # Policy Mappings:
 # - POL-PRIV-001: Data Protection → TLS 1.2, Encryption
 # - POL-PRIV-002: Data Retention → Lifecycle Policy

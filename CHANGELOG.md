@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Adopters should pin to a release tag (`@v1`). `main` may change without notice.
 
-## [1.0.0] - 2026-08-22
+## [1.0.0] - 2026-08-23
 
 First tagged release. Everything below landed before `v1`, but is listed
 because the fail-open fixes change gate behaviour in ways an adopter needs
@@ -40,6 +40,19 @@ actually ran.
   with an explicit `NOT_RUN`, `NO_DATA` or `MALFORMED_REPORT` status instead
   of omitting it. A crashed gate used to vanish from the artifact entirely,
   leaving a pack that read as a clean bill of health.
+- **Scanning part of the target is not a pass either.** The PII scanner
+  discovered `*.csv` only, so a data directory holding one CSV beside fifty
+  JSONL or Parquet shards scanned the CSV, found nothing, and returned a green
+  check for the whole directory. It now reads CSV, TSV, JSON, JSON Lines and
+  Parquet, including `.gz`/`.bz2`/`.xz`/`.zst` variants.
+- **Data the scanner cannot read blocks the gate.** Whatever is left over (a
+  `.xlsx`, an `.avro`, a bare archive, a format excluded by config) is listed
+  as unscanned and exits `2`. Passing would claim coverage over files the gate
+  never opened. `--allow-unscanned` (action input `allow-unscanned`) records
+  the gap and continues.
+- **A gate that covered less than its target is `PARTIAL`** in the evidence
+  pack, never `PASS`, and pulls the pack's `overall_result` with it. The
+  Markdown summary names the gates involved.
 
 ### Fixed: detection accuracy
 
@@ -83,6 +96,22 @@ actually ran.
   actually exercised. CI blocks on it as a negative test.
 - Python 3.11, 3.12 and 3.13 CI matrix. The scripts used `str | None`
   annotations, which require 3.10+, while nothing declared a minimum at all.
+- **Checksummed evidence packs.** Each pack carries a `sha256` of its own
+  canonical content, and every gate records the digest of the report it was
+  summarized from. `--verify <pack>` recomputes both and exits non-zero if
+  either has moved, so a pack edited after generation, or paired with a
+  different set of gate outputs, no longer verifies. This is a checksum, not
+  a signature: it detects post-hoc edits, not who made them. Signed
+  attestation stays on the roadmap.
+- The `evidence-pack` action verifies the pack it just wrote and exposes
+  `content-digest` and `overall-result` as step outputs, so the digest can be
+  fed straight to `actions/attest-build-provenance`.
+- `pii_scan.scan_extensions` in `compliance.config.yml`, to narrow which
+  formats the scanner opens. Narrowing is treated as a coverage decision:
+  excluded files are reported as unscanned, not silently dropped.
+- A provenance note on `infrastructure/`, naming the public sources the
+  `azurerm_*` arguments and UAE region names come from, and why POL-PRIV-003
+  requires a concrete region to be enforceable at all.
 - Community health files: `SECURITY.md`, `CODE_OF_CONDUCT.md`,
   issue and PR templates, `CODEOWNERS`, Dependabot config.
 
@@ -97,9 +126,11 @@ actually ran.
   used whatever version happened to be newest that day and could drift from
   the versions this project tests. The gates that only need PyYAML use the
   same file as a constraints file.
-- Dependency floors stay permissive (`pandas>=2.0.0`, `pyyaml>=6.0`). Both
-  pandas 2.3.3 and pandas 3.0.5 pass the full suite on 3.12, so narrowing
-  the floor would drop working configurations for no gain.
+- Dependency floors stay permissive (`pandas>=2.0.0`, `pyyaml>=6.0`,
+  `pyarrow>=14.0.0`). Both pandas 2.3.3 and pandas 3.0.5 pass the full suite
+  on 3.12, so narrowing the floor would drop working configurations for no
+  gain. `pyarrow` ships by default because without a Parquet reader a
+  `.parquet` dataset counts as unscanned: honest, but it blocks the build.
 
 ### Changed (policy register)
 
@@ -184,8 +215,10 @@ actually ran.
 
 ### Changed
 
-- The evidence pack format is now version `1.1`: gates carry a
-  `report_status` field and the pack carries `gates_not_run`.
+- The evidence pack format is version `1.2`: gates carry `report_status`,
+  `report_path` and `report_sha256`; the pack carries `gates_not_run` and an
+  `integrity` block; and `overall_result` can be `PARTIAL` as well as `PASS`
+  or `FAIL`.
 - Conftest runs once per check rather than twice; GitHub annotations are
   rendered from the JSON report.
 - Reusable workflow and README examples reference `@v1` instead of `@main`.
