@@ -77,10 +77,24 @@ README falls back to the truncated single-line text draw.io emits alongside
 them. The diagram then renders as `UAE PDPL...` and loses the regulation
 citations that are the point of it.
 
-`TestArchitectureDiagram` enforces this: it fails on any `<foreignObject>`, on
-clipped labels, and on policy ids the register does not define. If a label is
-genuinely too long for its shape, widen the shape rather than letting the
-exporter clip it.
+If your export does contain `<foreignObject>`, you do not need to hunt for the
+setting. Run the fixer, which pulls the full text out of each foreignObject and
+rewrites it as ordinary `<text>` and `<tspan>` elements:
+
+```bash
+python tools/fix_drawio_svg.py docs/architecture.svg
+```
+
+It keeps draw.io's `light-dark()` fills, so the diagram still follows GitHub's
+dark mode.
+
+`TestArchitectureDiagram` enforces the result: it fails on any
+`<foreignObject>`, on clipped labels, and on policy ids the register does not
+define. If a label is genuinely too long for its shape, widen the shape in
+draw.io rather than letting the exporter clip it.
+
+Exporting as PNG instead also avoids the problem entirely, at the cost of
+scalable text and dark-mode adaptation.
 
 ## Pull requests
 
