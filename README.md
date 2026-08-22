@@ -109,7 +109,7 @@ The same principle runs through the rest of the toolkit:
 
 ## Architecture
 
-![ArchiMate architecture for GitOps Compliant AI](docs/architecture.svg)
+![ArchiMate architecture for AI Compliance Gates](docs/architecture.svg)
 
 ## Try it locally
 
