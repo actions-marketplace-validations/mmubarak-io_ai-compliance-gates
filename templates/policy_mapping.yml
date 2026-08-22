@@ -21,7 +21,7 @@ policies:
       - "policy/terraform_compliance.rego (min_tls_version, https_traffic_only_enabled)"
       - "scripts/pii_scanner.py (CI gate: compliance-check)"
 
-  - policy_id: "POL-PRIV-006"
+  - policy_id: "POL-PRIV-002"
     name: "Data Retention"
     regulation:
       - "UAE PDPL Art. 9: retention limits"
@@ -30,7 +30,7 @@ policies:
     enforced_by:
       - "policy/terraform_compliance.rego (delete_retention_policy, retention_in_days)"
 
-  - policy_id: "POL-PRIV-007"
+  - policy_id: "POL-PRIV-003"
     name: "Data Residency (UAE)"
     regulation:
       - "UAE PDPL Art. 22-23: cross-border transfer restrictions"
@@ -56,7 +56,7 @@ policies:
     enforced_by:
       - "policy/terraform_compliance.rego (shared_access_key_enabled, enable_rbac_authorization)"
 
-  - policy_id: "POL-PRIV-010"
+  - policy_id: "POL-PRIV-004"
     name: "Audit Logging"
     regulation:
       - "UAE PDPL Art. 20"

@@ -3,11 +3,11 @@
 # ============================================
 # Policy Mappings:
 # - POL-PRIV-001: Data Protection → TLS 1.2, Encryption
-# - POL-PRIV-006: Data Retention → Lifecycle Policy
-# - POL-PRIV-007: Data Residency → UAE North Region
+# - POL-PRIV-002: Data Retention → Lifecycle Policy
+# - POL-PRIV-003: Data Residency → UAE North Region
 # - POL-SEC-001: Security → Private Access Only
 # - POL-SEC-002: Access Control → RBAC
-# - POL-PRIV-010: Audit → Diagnostic Logging
+# - POL-PRIV-004: Audit → Diagnostic Logging
 # ============================================
 
 locals {
@@ -89,7 +89,7 @@ resource "azurerm_storage_container" "ml_models" {
 
 # ============================================
 # Lifecycle Policy - Data Retention
-# POL-PRIV-006: Auto-delete after 90 days
+# POL-PRIV-002: Auto-delete after 90 days
 # ============================================
 resource "azurerm_storage_management_policy" "retention" {
   storage_account_id = azurerm_storage_account.ml_data.id
@@ -133,7 +133,7 @@ resource "azurerm_storage_management_policy" "retention" {
 
 # ============================================
 # Log Analytics - Audit Logging
-# POL-PRIV-010: Track all access
+# POL-PRIV-004: Track all access
 # ============================================
 resource "azurerm_log_analytics_workspace" "ml" {
   count               = var.enable_audit_logs ? 1 : 0

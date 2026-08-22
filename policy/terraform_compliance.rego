@@ -20,9 +20,9 @@ import rego.v1
 # arrives as a list of {path, contents} documents. Merging them here
 # is what makes cross-file rules correct: a storage account declared
 # in main.tf and its diagnostic setting in monitoring.tf must be
-# judged together, not once per file. Without this, POL-PRIV-010
+# judged together, not once per file. Without this, POL-PRIV-004
 # fires a false positive on every file that lacks the setting, and
-# POL-PRIV-007 silently passes whenever variables.tf isn't included.
+# POL-PRIV-003 silently passes whenever variables.tf isn't included.
 #
 # The fallback branch keeps the pack working when conftest is run
 # without --combine (single document).
@@ -69,23 +69,23 @@ deny contains msg if {
 }
 
 # ------------------------------------------------------------
-# POL-PRIV-006: Data Retention
+# POL-PRIV-002: Data Retention
 # UAE PDPL Art. 9 (retention limits) / GDPR Art. 5(1)(e)
 # ------------------------------------------------------------
 deny contains msg if {
 	some name, sa in _of_kind("azurerm_storage_account")
 	not sa.blob_properties.delete_retention_policy.days
-	msg := sprintf("[POL-PRIV-006] Storage account '%s' must define a blob delete retention policy", [name])
+	msg := sprintf("[POL-PRIV-002] Storage account '%s' must define a blob delete retention policy", [name])
 }
 
 deny contains msg if {
 	some name, law in _of_kind("azurerm_log_analytics_workspace")
 	law.retention_in_days < 90
-	msg := sprintf("[POL-PRIV-006] Log Analytics workspace '%s' must retain audit logs >= 90 days", [name])
+	msg := sprintf("[POL-PRIV-002] Log Analytics workspace '%s' must retain audit logs >= 90 days", [name])
 }
 
 # ------------------------------------------------------------
-# POL-PRIV-007: Data Residency (UAE)
+# POL-PRIV-003: Data Residency (UAE)
 # UAE PDPL Art. 22-23 (cross-border transfer restrictions)
 # ------------------------------------------------------------
 allowed_regions := {"uaenorth", "uaecentral"}
@@ -94,7 +94,7 @@ deny contains msg if {
 	some name, v in variables
 	name == "location"
 	not allowed_regions[v["default"]]
-	msg := sprintf("[POL-PRIV-007] Variable 'location' default '%s' violates UAE data residency (allowed: uaenorth, uaecentral)", [v["default"]])
+	msg := sprintf("[POL-PRIV-003] Variable 'location' default '%s' violates UAE data residency (allowed: uaenorth, uaecentral)", [v["default"]])
 }
 
 # ------------------------------------------------------------
@@ -152,14 +152,14 @@ deny contains msg if {
 }
 
 # ------------------------------------------------------------
-# POL-PRIV-010: Audit Logging
+# POL-PRIV-004: Audit Logging
 # UAE PDPL Art. 20 / GDPR Art. 30 (records of processing)
 # ------------------------------------------------------------
 # Cross-file rule: correct only because _docs merges every document.
 deny contains msg if {
 	count(_of_kind("azurerm_storage_account")) > 0
 	count(_of_kind("azurerm_monitor_diagnostic_setting")) == 0
-	msg := "[POL-PRIV-010] Storage resources require azurerm_monitor_diagnostic_setting for audit logging"
+	msg := "[POL-PRIV-004] Storage resources require azurerm_monitor_diagnostic_setting for audit logging"
 }
 
 # ------------------------------------------------------------

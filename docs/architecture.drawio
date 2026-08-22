@@ -68,7 +68,7 @@
         <mxCell id="t-tf" value="Terraform Module&lt;br&gt;&lt;i&gt;ml-platform&lt;/i&gt;" style="html=1;whiteSpace=wrap;shape=mxgraph.archimate3.application;appType=artifact;archiType=square;fillColor=#AFFFAF;" vertex="1" parent="1">
           <mxGeometry x="400" y="600" width="200" height="60" as="geometry" />
         </mxCell>
-        <mxCell id="t-azure" value="Azure UAE North: Data Residency (POL-PRIV-007)" style="html=1;whiteSpace=wrap;shape=mxgraph.archimate3.application;appType=node;archiType=square;fillColor=#AFFFAF;verticalAlign=top;container=1;collapsible=0;" vertex="1" parent="1">
+        <mxCell id="t-azure" value="Azure UAE North: Data Residency (POL-PRIV-003)" style="html=1;whiteSpace=wrap;shape=mxgraph.archimate3.application;appType=node;archiType=square;fillColor=#AFFFAF;verticalAlign=top;container=1;collapsible=0;" vertex="1" parent="1">
           <mxGeometry x="680" y="590" width="480" height="230" as="geometry" />
         </mxCell>
         <mxCell id="t-st" value="Storage Account&lt;br&gt;TLS 1.2 · private · RBAC" style="html=1;whiteSpace=wrap;shape=mxgraph.archimate3.application;appType=node;archiType=square;fillColor=#AFFFAF;" vertex="1" parent="t-azure">

@@ -31,8 +31,8 @@ actually ran.
   non-recursive glob, so cards in nested directories were skipped and the
   gate passed without seeing them.
 - **The policy pack evaluates files together.** `conftest` now runs with
-  `--combine`. Per-file evaluation made `POL-PRIV-010` fire a false positive
-  on every file lacking a diagnostic setting, and made `POL-PRIV-007` pass
+  `--combine`. Per-file evaluation made `POL-PRIV-004` fire a false positive
+  on every file lacking a diagnostic setting, and made `POL-PRIV-003` pass
   silently whenever `variables.tf` wasn't in the path list.
 - **Terraform paths that match nothing now fail.** The policy action exits
   `2` instead of checking an empty file list.
@@ -100,6 +100,25 @@ actually ran.
 - Dependency floors stay permissive (`pandas>=2.0.0`, `pyyaml>=6.0`). Both
   pandas 2.3.3 and pandas 3.0.5 pass the full suite on 3.12, so narrowing
   the floor would drop working configurations for no gain.
+
+### Changed (policy register)
+
+- **Policy ids renumbered densely.** The register jumped `POL-PRIV-001`,
+  `006`, `007`, `010`, which reads as though policies 002 through 005 exist
+  and are being withheld. They never existed. Renumbered so the register is
+  self-contained:
+
+  | Was | Now | Policy |
+  |-----|-----|--------|
+  | `POL-PRIV-006` | `POL-PRIV-002` | Data Retention |
+  | `POL-PRIV-007` | `POL-PRIV-003` | Data Residency (UAE) |
+  | `POL-PRIV-010` | `POL-PRIV-004` | Audit Logging |
+
+  Every other id is unchanged, and the ordering of the register is the same.
+  This is done before the first announcement on purpose: policy ids are
+  written into `evidence_pack.json`, which adopters retain as an audit
+  record, so renumbering after adoption would break the continuity of
+  somebody else's compliance evidence.
 
 ### Fixed (policy register)
 

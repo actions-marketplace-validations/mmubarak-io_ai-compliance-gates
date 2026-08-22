@@ -125,7 +125,7 @@ def build_gates(pii, pii_status, cards, cards_status, conftest, conftest_status)
         result, detail = ("NOT_RUN" if conftest_status == "missing" else "MALFORMED_REPORT"), {}
     gates.append(_gate(
         "Infrastructure Policy-as-Code",
-        "POL-PRIV-001/006/007, POL-SEC-001/002, POL-PRIV-010",
+        "POL-PRIV-001/002/003, POL-SEC-001/002, POL-PRIV-004",
         "UAE PDPL Art. 9, 20, 22-23; GDPR Art. 5, 30, 32",
         "conftest (OPA/Rego)", conftest_status, result, detail,
     ))

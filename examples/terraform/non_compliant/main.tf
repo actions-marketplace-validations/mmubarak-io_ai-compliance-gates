@@ -3,7 +3,7 @@
 # policy/terraform_compliance.rego.
 #
 # Note there is no azurerm_monitor_diagnostic_setting anywhere in this
-# directory: POL-PRIV-010 can only catch that when conftest runs with
+# directory: POL-PRIV-004 can only catch that when conftest runs with
 # --combine, which is exactly what the policy-check action does.
 
 locals {
@@ -28,7 +28,7 @@ resource "azurerm_storage_account" "bad" {
   shared_access_key_enabled       = true     # POL-SEC-002
   allow_nested_items_to_be_public = true
 
-  # no blob_properties.delete_retention_policy -> POL-PRIV-006
+  # no blob_properties.delete_retention_policy -> POL-PRIV-002
 }
 
 resource "azurerm_storage_container" "bad" {
@@ -52,5 +52,5 @@ resource "azurerm_log_analytics_workspace" "bad" {
   resource_group_name = "rg-demo"
   location            = var.location
   sku                 = "PerGB2018"
-  retention_in_days   = 30 # POL-PRIV-006 (< 90)
+  retention_in_days   = 30 # POL-PRIV-002 (< 90)
 }

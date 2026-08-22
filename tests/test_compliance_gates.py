@@ -422,16 +422,16 @@ class TestPolicyPack:
         r = self._run("examples/terraform/non_compliant/main.tf",
                       "examples/terraform/non_compliant/variables.tf")
         assert r.returncode != 0
-        for policy in ["POL-PRIV-001", "POL-PRIV-006", "POL-SEC-001", "POL-SEC-002", "POL-GOV-001"]:
+        for policy in ["POL-PRIV-001", "POL-PRIV-002", "POL-SEC-001", "POL-SEC-002", "POL-GOV-001"]:
             assert policy in r.stdout
 
     def test_cross_file_rules_fire(self):
-        """POL-PRIV-007 lives in variables.tf and POL-PRIV-010 is an absence
+        """POL-PRIV-003 lives in variables.tf and POL-PRIV-004 is an absence
         check. Both are only correct because conftest runs with --combine."""
         r = self._run("examples/terraform/non_compliant/main.tf",
                       "examples/terraform/non_compliant/variables.tf")
-        assert "POL-PRIV-007" in r.stdout
-        assert "POL-PRIV-010" in r.stdout
+        assert "POL-PRIV-003" in r.stdout
+        assert "POL-PRIV-004" in r.stdout
 
 
 if __name__ == "__main__":
