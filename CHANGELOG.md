@@ -101,6 +101,16 @@ actually ran.
   pandas 2.3.3 and pandas 3.0.5 pass the full suite on 3.12, so narrowing
   the floor would drop working configurations for no gain.
 
+### Security (supply chain)
+
+- **Third-party actions are pinned to commit SHAs**, not tags, in both
+  `ci.yml` and the reusable `compliance-gates.yml`. A tag is mutable: whoever
+  controls the upstream repository can repoint `v7` at different code, and
+  every consumer picks it up silently on the next run. A toolkit that already
+  verifies the conftest tarball by SHA-256 should not trust its own CI to a
+  mutable reference. Each pin carries the version as a trailing comment, so
+  Dependabot still tracks and proposes updates.
+
 ### Changed (actions)
 
 - Bumped the third-party actions this project uses: `actions/checkout` 4 to 7,
