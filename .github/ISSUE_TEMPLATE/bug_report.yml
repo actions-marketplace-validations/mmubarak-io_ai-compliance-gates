@@ -1,0 +1,57 @@
+name: 🐛 Bug report
+description: A gate behaves incorrectly — wrong result, crash, or confusing output.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **If a gate PASSED when it should have BLOCKED, please report it privately
+        as a security issue instead** — a false negative produces an evidence pack
+        asserting compliance that was never verified.
+  - type: dropdown
+    id: gate
+    attributes:
+      label: Which gate?
+      options:
+        - PII scan (pii_scanner.py / pii-scan action)
+        - Model card validation (model_card_validator.py / model-card-check action)
+        - Infrastructure policy (Rego pack / policy-check action)
+        - Evidence pack (generate_evidence_pack.py / evidence-pack action)
+        - Reusable workflow (compliance-gates.yml)
+        - Something else
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did the gate do, and what did you expect instead?
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Reproduction
+      description: >
+        The exact command or workflow step, plus a minimal input.
+        **Use synthetic data only — never paste real personal data.**
+      render: shell
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version / ref
+      description: The tag, branch or commit you adopted (e.g. `v1`, `main@a58c4fa`).
+    validations:
+      required: true
+  - type: input
+    id: python
+    attributes:
+      label: Python version
+      placeholder: "3.11"
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant output
+      render: shell

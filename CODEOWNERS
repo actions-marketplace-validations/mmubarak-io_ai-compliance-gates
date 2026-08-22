@@ -1,0 +1,8 @@
+# Default owner for everything in this repository.
+* @MohamedMubarak123
+
+# The gate logic and the policy pack decide whether a build is blocked;
+# changes there need maintainer review even when CI is green.
+/scripts/    @MohamedMubarak123
+/policy/     @MohamedMubarak123
+/.github/    @MohamedMubarak123

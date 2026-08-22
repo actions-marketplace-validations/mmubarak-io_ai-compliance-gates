@@ -24,23 +24,55 @@ inputs:
     description: "Directory to write evidence_pack.json / .md"
     required: false
     default: "evidence"
+  fail-on-violation:
+    description: "Fail this step when the overall result is not PASS (the gates themselves already fail the build)"
+    required: false
+    default: "false"
 runs:
   using: composite
   steps:
     - name: Install dependencies
       shell: bash
-      run: pip install --quiet pyyaml
+      run: |
+        set -euo pipefail
+        pip install --quiet pyyaml
     - name: Generate evidence pack
       shell: bash
+      env:
+        INPUT_PII_REPORT: ${{ inputs.pii-report }}
+        INPUT_MODEL_CARD_REPORT: ${{ inputs.model-card-report }}
+        INPUT_CONFTEST_REPORT: ${{ inputs.conftest-report }}
+        INPUT_POLICY_MAPPING: ${{ inputs.policy-mapping }}
+        INPUT_OUTPUT_DIR: ${{ inputs.output-dir }}
+        INPUT_FAIL_ON_VIOLATION: ${{ inputs.fail-on-violation }}
+        GENERATOR: ${{ github.action_path }}/../../../scripts/generate_evidence_pack.py
+        DEFAULT_MAPPING: ${{ github.action_path }}/../../../templates/policy_mapping.yml
       run: |
-        MAPPING="${{ inputs.policy-mapping }}"
-        [ -z "$MAPPING" ] && MAPPING="${{ github.action_path }}/../../../templates/policy_mapping.yml"
-        python "${{ github.action_path }}/../../../scripts/generate_evidence_pack.py" \
-          --pii-report "${{ inputs.pii-report }}" \
-          --model-card-report "${{ inputs.model-card-report }}" \
-          --conftest-report "${{ inputs.conftest-report }}" \
-          --policy-mapping "$MAPPING" \
-          --output-dir "${{ inputs.output-dir }}"
+        set -euo pipefail
+        MAPPING="$INPUT_POLICY_MAPPING"
+        if [ -z "$MAPPING" ]; then
+          MAPPING="$DEFAULT_MAPPING"
+        fi
+        ARGS=(
+          --pii-report "$INPUT_PII_REPORT"
+          --model-card-report "$INPUT_MODEL_CARD_REPORT"
+          --conftest-report "$INPUT_CONFTEST_REPORT"
+          --policy-mapping "$MAPPING"
+          --output-dir "$INPUT_OUTPUT_DIR"
+        )
+        if [ "$INPUT_FAIL_ON_VIOLATION" = "true" ]; then
+          ARGS+=(--fail-on-violation)
+        fi
+        python "$GENERATOR" "${ARGS[@]}"
     - name: Publish job summary
       shell: bash
-      run: cat "${{ inputs.output-dir }}/evidence_pack.md" >> "$GITHUB_STEP_SUMMARY"
+      env:
+        INPUT_OUTPUT_DIR: ${{ inputs.output-dir }}
+      run: |
+        set -euo pipefail
+        SUMMARY="$INPUT_OUTPUT_DIR/evidence_pack.md"
+        if [ -f "$SUMMARY" ]; then
+          cat "$SUMMARY" >> "$GITHUB_STEP_SUMMARY"
+        else
+          echo "::warning title=Evidence Pack::no summary written at ${SUMMARY}"
+        fi

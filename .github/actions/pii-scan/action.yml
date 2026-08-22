@@ -5,7 +5,7 @@ branding:
   color: red
 inputs:
   path:
-    description: "File or directory of CSVs to scan"
+    description: "File or directory of CSVs to scan (directories are searched recursively)"
     required: true
   config:
     description: "Optional compliance.config.yml to extend/override patterns"
@@ -15,16 +15,36 @@ inputs:
     description: "Where to write the JSON report (consumed by the evidence-pack action)"
     required: false
     default: "reports/pii_scan.json"
+  allow-empty:
+    description: "Pass when no CSV files are found instead of failing as misconfigured"
+    required: false
+    default: "false"
 runs:
   using: composite
   steps:
     - name: Install dependencies
       shell: bash
-      run: pip install --quiet pandas pyyaml
+      run: |
+        set -euo pipefail
+        pip install --quiet pandas pyyaml
     - name: Scan for PII
       shell: bash
+      # Inputs are passed through env rather than interpolated into the script
+      # body, so a value containing shell metacharacters is data, not code.
+      env:
+        INPUT_PATH: ${{ inputs.path }}
+        INPUT_CONFIG: ${{ inputs.config }}
+        INPUT_OUTPUT_FILE: ${{ inputs.output-file }}
+        INPUT_ALLOW_EMPTY: ${{ inputs.allow-empty }}
+        SCANNER: ${{ github.action_path }}/../../../scripts/pii_scanner.py
       run: |
-        mkdir -p "$(dirname "${{ inputs.output-file }}")"
-        ARGS=(--path "${{ inputs.path }}" --output-format github --output-file "${{ inputs.output-file }}")
-        [ -n "${{ inputs.config }}" ] && ARGS+=(--config "${{ inputs.config }}")
-        python "${{ github.action_path }}/../../../scripts/pii_scanner.py" "${ARGS[@]}"
+        set -euo pipefail
+        mkdir -p "$(dirname "$INPUT_OUTPUT_FILE")"
+        ARGS=(--path "$INPUT_PATH" --output-format github --output-file "$INPUT_OUTPUT_FILE")
+        if [ -n "$INPUT_CONFIG" ]; then
+          ARGS+=(--config "$INPUT_CONFIG")
+        fi
+        if [ "$INPUT_ALLOW_EMPTY" = "true" ]; then
+          ARGS+=(--allow-empty)
+        fi
+        python "$SCANNER" "${ARGS[@]}"

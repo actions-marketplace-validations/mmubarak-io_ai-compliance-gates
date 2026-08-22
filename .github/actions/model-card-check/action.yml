@@ -1,30 +1,48 @@
 name: "Model Card Validation (EU AI Act)"
-description: "Validates AI model cards against EU AI Act Annex IV / UAE PDPL documentation requirements, citing the article behind every failure. Implements POL-GOV-002."
+description: "Validates model cards against EU AI Act Annex IV, UAE PDPL and GDPR documentation requirements. Implements POL-GOV-002."
 branding:
   icon: file-text
   color: blue
 inputs:
   path:
-    description: "File or directory of model card YAMLs"
+    description: "Model card file or directory (directories are searched recursively)"
     required: true
   config:
     description: "Optional compliance.config.yml with a custom schema"
     required: false
     default: ""
   output-file:
-    description: "Where to write the JSON report"
+    description: "Where to write the JSON report (consumed by the evidence-pack action)"
     required: false
     default: "reports/model_cards.json"
+  allow-empty:
+    description: "Pass when no model cards are found instead of failing as misconfigured"
+    required: false
+    default: "false"
 runs:
   using: composite
   steps:
     - name: Install dependencies
       shell: bash
-      run: pip install --quiet pyyaml
+      run: |
+        set -euo pipefail
+        pip install --quiet pyyaml
     - name: Validate model cards
       shell: bash
+      env:
+        INPUT_PATH: ${{ inputs.path }}
+        INPUT_CONFIG: ${{ inputs.config }}
+        INPUT_OUTPUT_FILE: ${{ inputs.output-file }}
+        INPUT_ALLOW_EMPTY: ${{ inputs.allow-empty }}
+        VALIDATOR: ${{ github.action_path }}/../../../scripts/model_card_validator.py
       run: |
-        mkdir -p "$(dirname "${{ inputs.output-file }}")"
-        ARGS=(--path "${{ inputs.path }}" --output-format github --output-file "${{ inputs.output-file }}")
-        [ -n "${{ inputs.config }}" ] && ARGS+=(--config "${{ inputs.config }}")
-        python "${{ github.action_path }}/../../../scripts/model_card_validator.py" "${ARGS[@]}"
+        set -euo pipefail
+        mkdir -p "$(dirname "$INPUT_OUTPUT_FILE")"
+        ARGS=(--path "$INPUT_PATH" --output-format github --output-file "$INPUT_OUTPUT_FILE")
+        if [ -n "$INPUT_CONFIG" ]; then
+          ARGS+=(--config "$INPUT_CONFIG")
+        fi
+        if [ "$INPUT_ALLOW_EMPTY" = "true" ]; then
+          ARGS+=(--allow-empty)
+        fi
+        python "$VALIDATOR" "${ARGS[@]}"

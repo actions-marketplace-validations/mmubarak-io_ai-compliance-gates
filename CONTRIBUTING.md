@@ -5,9 +5,18 @@ PII recognizers.
 
 ## Getting started
 
+Requires **Python 3.9+**.
+
 ```bash
 pip install -r requirements.txt pytest
 pytest tests/ -v
+```
+
+The Rego tests need [conftest](https://www.conftest.dev/) on your `PATH`;
+they skip automatically if it isn't installed. To run them:
+
+```bash
+conftest test --parser hcl2 --combine -p policy infrastructure/modules/ml-platform/*.tf
 ```
 
 ## What we're looking for
@@ -32,8 +41,41 @@ pytest tests/ -v
 - Keep the core dependency-light; heavyweight dependencies (NLP models etc.)
   go behind optional extras.
 
+## The one rule that matters most
+
+**A gate must never report success for a check it did not perform.**
+
+This is the failure mode that makes a compliance toolkit actively harmful:
+a green check and an evidence pack asserting compliance for something nobody
+looked at. Concretely, when you touch gate logic:
+
+| Situation | Required behaviour |
+|-----------|--------------------|
+| Nothing matched the target path | exit `2`, unless `--allow-empty` |
+| Input unreadable or malformed | treat as a finding, exit `1` |
+| Config invalid | exit `2` with a message naming the key |
+| Violation found | exit `1` in **every** `--output-format` |
+
+If you add an output format, a discovery path, or an early return, add the
+matching regression test. The existing ones are grouped under
+`TestPIIScannerExitCodes` and `TestModelCardExitCodes` — follow the pattern.
+
+New rules also need a negative fixture proving they actually fire. See
+`examples/terraform/non_compliant/`, which is deliberately split across two
+files so the cross-file rules are exercised.
+
 ## Pull requests
 
 Fork, branch, commit (short and simple messages), open a PR against `main`.
 CI must be green — the pipeline dogfoods the toolkit against `examples/`,
+in both directions: clean fixtures must pass and dirty ones must be blocked,
 so a broken gate blocks your PR by design.
+
+Note whether your change makes a gate **stricter** or **looser**; the PR
+template asks, and stricter changes need a `CHANGELOG.md` entry so adopters
+know a previously-green build may start failing.
+
+## Security
+
+A gate that passes when it should block is a security issue, not a bug —
+report it privately via [SECURITY.md](SECURITY.md).

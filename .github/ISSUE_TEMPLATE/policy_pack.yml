@@ -1,0 +1,52 @@
+name: 🌍 New jurisdiction or recognizer
+description: Propose policy rules or PII patterns for a jurisdiction this toolkit doesn't cover yet.
+labels: ["policy-pack", "enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This is the contribution the project most wants. See `CONTRIBUTING.md`
+        for the ground rule: every rule cites the regulation it enforces.
+  - type: input
+    id: jurisdiction
+    attributes:
+      label: Jurisdiction / framework
+      placeholder: "KSA PDPL, Qatar PDPPL, DIFC DP Law, NIST AI RMF, ISO 42001..."
+    validations:
+      required: true
+  - type: dropdown
+    id: kind
+    attributes:
+      label: What are you proposing?
+      multiple: true
+      options:
+        - Rego policy rules (infrastructure)
+        - PII recognizers (national ID, phone, IBAN formats)
+        - A model card schema profile
+    validations:
+      required: true
+  - type: textarea
+    id: provisions
+    attributes:
+      label: Regulation provisions
+      description: >
+        Which articles/sections the rules enforce, one per rule. A rule that
+        can't cite a provision won't be merged — see CONTRIBUTING.md.
+      placeholder: |
+        - Art. 20 (security of processing) -> require TLS 1.2
+        - Art. 22 (cross-border transfer) -> restrict region to ...
+    validations:
+      required: true
+  - type: textarea
+    id: patterns
+    attributes:
+      label: Identifier formats (if proposing recognizers)
+      description: Format and a **synthetic** example. Never post a real identifier.
+      render: text
+  - type: checkboxes
+    id: ack
+    attributes:
+      label: Before submitting
+      options:
+        - label: Any example data I include is synthetic.
+          required: true

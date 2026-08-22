@@ -3,7 +3,7 @@
 # ============================================================
 # Machine-enforced version of templates/policy_mapping.yml.
 # Run with:
-#   conftest test --parser hcl2 -p policy infrastructure/modules/ml-platform/*.tf
+#   conftest test --parser hcl2 --combine -p policy infrastructure/**/*.tf
 #
 # Every rule is tagged with its policy ID and the regulation
 # it supports (UAE PDPL / GDPR / EU AI Act).
@@ -14,19 +14,56 @@ package main
 import rego.v1
 
 # ------------------------------------------------------------
+# Input normalization
+# ------------------------------------------------------------
+# The policy-check action runs conftest with --combine, so `input`
+# arrives as a list of {path, contents} documents. Merging them here
+# is what makes cross-file rules correct: a storage account declared
+# in main.tf and its diagnostic setting in monitoring.tf must be
+# judged together, not once per file. Without this, POL-PRIV-010
+# fires a false positive on every file that lacks the setting, and
+# POL-PRIV-007 silently passes whenever variables.tf isn't included.
+#
+# The fallback branch keeps the pack working when conftest is run
+# without --combine (single document).
+# ------------------------------------------------------------
+_docs := input if is_array(input)
+
+_docs := [{"path": "input", "contents": input}] if not is_array(input)
+
+# resources[kind][name] -> resource body, merged across all documents
+resources[kind][name] := cfg if {
+	some doc in _docs
+	some kind, named in doc.contents.resource
+	some name, cfg in named
+}
+
+# variables[name] -> variable body, merged across all documents
+variables[name] := cfg if {
+	some doc in _docs
+	some name, cfg in doc.contents.variable
+}
+
+# compliance_tags[key] -> value, merged across all documents
+compliance_tags[key] := value if {
+	some doc in _docs
+	some key, value in doc.contents.locals.compliance_tags
+}
+
+_of_kind(kind) := object.get(resources, kind, {})
+
+# ------------------------------------------------------------
 # POL-PRIV-001: Data Protection in Transit
 # UAE PDPL Art. 20 (security of processing) / GDPR Art. 32
 # ------------------------------------------------------------
 deny contains msg if {
-	some name
-	sa := input.resource.azurerm_storage_account[name]
+	some name, sa in _of_kind("azurerm_storage_account")
 	sa.min_tls_version != "TLS1_2"
 	msg := sprintf("[POL-PRIV-001] Storage account '%s' must enforce TLS 1.2 (min_tls_version)", [name])
 }
 
 deny contains msg if {
-	some name
-	sa := input.resource.azurerm_storage_account[name]
+	some name, sa in _of_kind("azurerm_storage_account")
 	not sa.https_traffic_only_enabled == true
 	msg := sprintf("[POL-PRIV-001] Storage account '%s' must enable HTTPS-only traffic", [name])
 }
@@ -36,15 +73,13 @@ deny contains msg if {
 # UAE PDPL Art. 9 (retention limits) / GDPR Art. 5(1)(e)
 # ------------------------------------------------------------
 deny contains msg if {
-	some name
-	sa := input.resource.azurerm_storage_account[name]
+	some name, sa in _of_kind("azurerm_storage_account")
 	not sa.blob_properties.delete_retention_policy.days
 	msg := sprintf("[POL-PRIV-006] Storage account '%s' must define a blob delete retention policy", [name])
 }
 
 deny contains msg if {
-	some name
-	law := input.resource.azurerm_log_analytics_workspace[name]
+	some name, law in _of_kind("azurerm_log_analytics_workspace")
 	law.retention_in_days < 90
 	msg := sprintf("[POL-PRIV-006] Log Analytics workspace '%s' must retain audit logs >= 90 days", [name])
 }
@@ -56,8 +91,7 @@ deny contains msg if {
 allowed_regions := {"uaenorth", "uaecentral"}
 
 deny contains msg if {
-	some name
-	v := input.variable[name]
+	some name, v in variables
 	name == "location"
 	not allowed_regions[v["default"]]
 	msg := sprintf("[POL-PRIV-007] Variable 'location' default '%s' violates UAE data residency (allowed: uaenorth, uaecentral)", [v["default"]])
@@ -68,22 +102,19 @@ deny contains msg if {
 # UAE PDPL Art. 20 / GDPR Art. 32
 # ------------------------------------------------------------
 deny contains msg if {
-	some name
-	sa := input.resource.azurerm_storage_account[name]
+	some name, sa in _of_kind("azurerm_storage_account")
 	not sa.public_network_access_enabled == false
 	msg := sprintf("[POL-SEC-001] Storage account '%s' must disable public network access", [name])
 }
 
 deny contains msg if {
-	some name
-	kv := input.resource.azurerm_key_vault[name]
+	some name, kv in _of_kind("azurerm_key_vault")
 	not kv.public_network_access_enabled == false
 	msg := sprintf("[POL-SEC-001] Key Vault '%s' must disable public network access", [name])
 }
 
 deny contains msg if {
-	some cname
-	c := input.resource.azurerm_storage_container[cname]
+	some cname, c in _of_kind("azurerm_storage_container")
 	c.container_access_type != "private"
 	msg := sprintf("[POL-SEC-001] Storage container '%s' must be private", [cname])
 }
@@ -93,15 +124,13 @@ deny contains msg if {
 # UAE PDPL Art. 20 / GDPR Art. 32
 # ------------------------------------------------------------
 deny contains msg if {
-	some name
-	sa := input.resource.azurerm_storage_account[name]
+	some name, sa in _of_kind("azurerm_storage_account")
 	not sa.shared_access_key_enabled == false
 	msg := sprintf("[POL-SEC-002] Storage account '%s' must disable shared access keys (use RBAC/managed identity)", [name])
 }
 
 deny contains msg if {
-	some name
-	kv := input.resource.azurerm_key_vault[name]
+	some name, kv in _of_kind("azurerm_key_vault")
 	not kv.enable_rbac_authorization == true
 	msg := sprintf("[POL-SEC-002] Key Vault '%s' must use RBAC authorization", [name])
 }
@@ -110,9 +139,10 @@ deny contains msg if {
 # POL-PRIV-010: Audit Logging
 # UAE PDPL Art. 20 / GDPR Art. 30 (records of processing)
 # ------------------------------------------------------------
+# Cross-file rule: correct only because _docs merges every document.
 deny contains msg if {
-	count(input.resource.azurerm_storage_account) > 0
-	not input.resource.azurerm_monitor_diagnostic_setting
+	count(_of_kind("azurerm_storage_account")) > 0
+	count(_of_kind("azurerm_monitor_diagnostic_setting")) == 0
 	msg := "[POL-PRIV-010] Storage resources require azurerm_monitor_diagnostic_setting for audit logging"
 }
 
@@ -123,8 +153,8 @@ deny contains msg if {
 required_tags := {"DataClassification", "RetentionDays", "ContainsPII", "ComplianceFramework"}
 
 deny contains msg if {
-	tags := input.locals.compliance_tags
+	count(compliance_tags) > 0
 	some t in required_tags
-	not tags[t]
+	not compliance_tags[t]
 	msg := sprintf("[POL-GOV-001] compliance_tags must declare '%s'", [t])
 }

@@ -41,3 +41,16 @@ model_cards:
   #     basis: "Internal policy DOC-001"
   # recommended:
   #   model_details.owner: "Internal policy DOC-002"
+
+# ============================================================
+# Notes
+# ============================================================
+# Validation: this file is validated before any scan runs. A bad regex,
+# a risk outside 1-10, or a required section missing its `basis` stops
+# the gate with exit code 2 and a message naming the offending key —
+# a malformed config is never silently ignored.
+#
+# Empty targets: a gate pointed at a path matching no files exits 2
+# (misconfigured) rather than reporting success. If an empty directory
+# is normal for your repo, pass --allow-empty on the CLI or set
+# `allow-empty: true` on the action.

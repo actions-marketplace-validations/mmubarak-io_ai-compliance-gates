@@ -12,7 +12,7 @@ output "key_vault_name" {
 
 output "compliance_status" {
   value = {
-    encryption_enabled     = true
+    encryption_enabled    = true
     https_only            = true
     tls_version           = "1.2"
     public_access_blocked = true

@@ -15,6 +15,13 @@ inputs:
     description: "Conftest version to install"
     required: false
     default: "0.56.0"
+  conftest-sha256:
+    description: >-
+      SHA-256 of the conftest Linux x86_64 tarball. Defaults to the checksum for
+      the pinned conftest-version; if you override the version you must supply
+      the matching checksum from that release's checksums.txt.
+    required: false
+    default: "620f41640d63bbde1646a108ce2816ba54c980466ceebb7e754dda2d508e8cd5"
   output-file:
     description: "Where to write the JSON report"
     required: false
@@ -24,17 +31,99 @@ runs:
   steps:
     - name: Install conftest
       shell: bash
+      env:
+        VERSION: ${{ inputs.conftest-version }}
+        SHA256: ${{ inputs.conftest-sha256 }}
+        PINNED_VERSION: "0.56.0"
+        PINNED_SHA256: "620f41640d63bbde1646a108ce2816ba54c980466ceebb7e754dda2d508e8cd5"
       run: |
-        if ! command -v conftest >/dev/null; then
-          wget -q "https://github.com/open-policy-agent/conftest/releases/download/v${{ inputs.conftest-version }}/conftest_${{ inputs.conftest-version }}_Linux_x86_64.tar.gz"
-          tar xzf "conftest_${{ inputs.conftest-version }}_Linux_x86_64.tar.gz" conftest
-          sudo mv conftest /usr/local/bin/
+        set -euo pipefail
+        if command -v conftest >/dev/null; then
+          echo "conftest already installed: $(conftest --version | head -1)"
+          exit 0
         fi
+
+        # A compliance toolkit that installs an unverified binary undermines
+        # the thing it is asserting, so the download is checksum-pinned.
+        if [ "$VERSION" != "$PINNED_VERSION" ] && [ "$SHA256" = "$PINNED_SHA256" ]; then
+          echo "::error title=Conftest checksum missing::conftest-version was set to ${VERSION} but conftest-sha256 is still the checksum for ${PINNED_VERSION}. Supply the matching SHA-256 from https://github.com/open-policy-agent/conftest/releases/download/v${VERSION}/checksums.txt"
+          exit 2
+        fi
+
+        TARBALL="conftest_${VERSION}_Linux_x86_64.tar.gz"
+        curl -sSLf --retry 3 -o "$TARBALL" \
+          "https://github.com/open-policy-agent/conftest/releases/download/v${VERSION}/${TARBALL}"
+        echo "${SHA256}  ${TARBALL}" | sha256sum -c -
+        tar xzf "$TARBALL" conftest
+        sudo mv conftest /usr/local/bin/
+        rm -f "$TARBALL"
+
     - name: Enforce policies
       shell: bash
+      env:
+        INPUT_POLICY_DIR: ${{ inputs.policy-dir }}
+        INPUT_TERRAFORM_PATHS: ${{ inputs.terraform-paths }}
+        INPUT_OUTPUT_FILE: ${{ inputs.output-file }}
+        DEFAULT_POLICY_DIR: ${{ github.action_path }}/../../../policy
       run: |
-        POLICY_DIR="${{ inputs.policy-dir }}"
-        [ -z "$POLICY_DIR" ] && POLICY_DIR="${{ github.action_path }}/../../../policy"
-        mkdir -p "$(dirname "${{ inputs.output-file }}")"
-        conftest test --parser hcl2 -p "$POLICY_DIR" ${{ inputs.terraform-paths }} --output json > "${{ inputs.output-file }}" || true
-        conftest test --parser hcl2 -p "$POLICY_DIR" ${{ inputs.terraform-paths }}
+        set -euo pipefail
+        POLICY_DIR="$INPUT_POLICY_DIR"
+        if [ -z "$POLICY_DIR" ]; then
+          POLICY_DIR="$DEFAULT_POLICY_DIR"
+        fi
+        mkdir -p "$(dirname "$INPUT_OUTPUT_FILE")"
+
+        # Expand globs without eval: split the input into words, then let bash
+        # expand each word as a pattern. The input never reaches a shell as code.
+        read -ra PATTERNS <<< "$INPUT_TERRAFORM_PATHS"
+        shopt -s nullglob
+        FILES=()
+        for pattern in "${PATTERNS[@]}"; do
+          matches=($pattern)
+          if [ ${#matches[@]} -gt 0 ]; then
+            FILES+=("${matches[@]}")
+          fi
+        done
+        shopt -u nullglob
+
+        # No match means the gate would examine nothing and report success.
+        if [ ${#FILES[@]} -eq 0 ]; then
+          echo "::error title=Policy Check Misconfigured::No Terraform files matched '${INPUT_TERRAFORM_PATHS}'"
+          exit 2
+        fi
+        echo "Checking ${#FILES[@]} Terraform file(s) against ${POLICY_DIR}"
+
+        # --combine evaluates every file as one document. Without it, rules
+        # that span files (a storage account here, its diagnostic setting
+        # there) produce false positives per file, and rules reading
+        # variables.tf silently pass whenever that file isn't included.
+        set +e
+        conftest test --parser hcl2 --combine -p "$POLICY_DIR" "${FILES[@]}" \
+          --output json > "$INPUT_OUTPUT_FILE"
+        STATUS=$?
+        set -e
+
+        # Annotations are rendered from the JSON report, so conftest runs once.
+        python3 - "$INPUT_OUTPUT_FILE" <<'PY'
+        import json, sys
+        try:
+            data = json.load(open(sys.argv[1]))
+        except (OSError, json.JSONDecodeError) as exc:
+            print(f"::error title=Policy Check::could not read conftest report: {exc}")
+            raise SystemExit(0)
+        if isinstance(data, dict):
+            data = [data]
+        failures = 0
+        for entry in data:
+            for f in entry.get("failures") or []:
+                failures += 1
+                print(f"::error title=Infrastructure Policy::{f.get('msg', '')}")
+            for w in entry.get("warnings") or []:
+                print(f"::warning title=Infrastructure Policy::{w.get('msg', '')}")
+        if failures:
+            print(f"::error title=Policy Violations::{failures} policy violation(s) found")
+        else:
+            print("::notice title=Policy Check Passed::No policy violations")
+        PY
+
+        exit $STATUS

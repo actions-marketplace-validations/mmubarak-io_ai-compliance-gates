@@ -1,0 +1,41 @@
+version: 2
+updates:
+  # The actions this toolkit depends on (checkout, setup-python, trivy...).
+  # A compliance gate pinned to a stale action is its own kind of drift.
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+    labels: ["dependencies", "github-actions"]
+    commit-message:
+      prefix: "ci"
+
+  # Composite actions are separate manifests as far as Dependabot is concerned.
+  - package-ecosystem: github-actions
+    directory: "/.github/actions/pii-scan"
+    schedule:
+      interval: weekly
+    labels: ["dependencies", "github-actions"]
+  - package-ecosystem: github-actions
+    directory: "/.github/actions/model-card-check"
+    schedule:
+      interval: weekly
+    labels: ["dependencies", "github-actions"]
+  - package-ecosystem: github-actions
+    directory: "/.github/actions/policy-check"
+    schedule:
+      interval: weekly
+    labels: ["dependencies", "github-actions"]
+  - package-ecosystem: github-actions
+    directory: "/.github/actions/evidence-pack"
+    schedule:
+      interval: weekly
+    labels: ["dependencies", "github-actions"]
+
+  - package-ecosystem: pip
+    directory: "/"
+    schedule:
+      interval: weekly
+    labels: ["dependencies", "python"]
+    commit-message:
+      prefix: "deps"

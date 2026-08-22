@@ -1,9 +1,10 @@
 name: CI
 
 # This repo's own pipeline does double duty:
-#   1. unit-tests the toolkit (pytest)
+#   1. unit-tests the toolkit (pytest) across the supported Python range
 #   2. dogfoods the composite actions against examples/ — the demo IS the
-#      integration test
+#      integration test, in both directions: the clean fixtures must pass
+#      and the deliberately dirty ones must be blocked.
 
 on:
   push:
@@ -14,17 +15,39 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   unit-tests:
-    name: "🧪 Unit Tests"
+    name: "🧪 Unit Tests (py${{ matrix.python-version }})"
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # 3.9 is the floor the scripts actually support; pinning only 3.11
+        # hid a syntax incompatibility from anyone running an older runtime.
+        python-version: ["3.9", "3.11", "3.12"]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: ${{ matrix.python-version }}
           cache: pip
       - run: pip install -r requirements.txt pytest
+      - name: Install conftest (exercises the Rego pack in unit tests)
+        env:
+          CONFTEST_VERSION: "0.56.0"
+          CONFTEST_SHA256: "620f41640d63bbde1646a108ce2816ba54c980466ceebb7e754dda2d508e8cd5"
+        run: |
+          set -euo pipefail
+          TARBALL="conftest_${CONFTEST_VERSION}_Linux_x86_64.tar.gz"
+          curl -sSLf --retry 3 -o "$TARBALL" \
+            "https://github.com/open-policy-agent/conftest/releases/download/v${CONFTEST_VERSION}/${TARBALL}"
+          echo "${CONFTEST_SHA256}  ${TARBALL}" | sha256sum -c -
+          tar xzf "$TARBALL" conftest
+          sudo mv conftest /usr/local/bin/
       - run: pytest tests/ -v
 
   compliance-gates:
@@ -41,39 +64,67 @@ jobs:
           python-version: "3.11"
           cache: pip
 
+      # ---- positive path: clean fixtures must pass ----
       - name: PII Scan (POL-PRIV-001)
         uses: ./.github/actions/pii-scan
         with:
           path: ./examples/sample_data/customers_anonymized.csv
-
-      - name: PII Scan blocks dirty data (negative test)
-        run: |
-          if python scripts/pii_scanner.py --path ./examples/sample_data/customers.csv --output-format github; then
-            echo "::error::Dirty dataset should have been blocked"; exit 1
-          fi
-          echo "✅ Gate correctly blocked PII-laden dataset"
 
       - name: Model Card Validation (POL-GOV-002)
         uses: ./.github/actions/model-card-check
         with:
           path: ./examples/model_cards/compliant
 
-      - name: Model card gate blocks non-compliant card (negative test)
+      - name: Infrastructure Policy Enforcement (POL-PRIV/SEC)
+        uses: ./.github/actions/policy-check
+        with:
+          terraform-paths: "infrastructure/modules/ml-platform/*.tf"
+
+      # ---- negative path: every gate must actually block ----
+      - name: PII gate blocks dirty data
         run: |
+          set -euo pipefail
+          if python scripts/pii_scanner.py --path ./examples/sample_data/customers.csv --output-format github; then
+            echo "::error::Dirty dataset should have been blocked"; exit 1
+          fi
+          echo "✅ Gate correctly blocked PII-laden dataset"
+
+      - name: Model card gate blocks non-compliant card
+        run: |
+          set -euo pipefail
           if python scripts/model_card_validator.py --path ./examples/model_cards/non_compliant --output-format github; then
             echo "::error::Non-compliant card should have failed"; exit 1
           fi
           echo "✅ Gate correctly blocked incomplete model card"
 
-      - name: Infrastructure Policy Enforcement (POL-PRIV/SEC)
-        uses: ./.github/actions/policy-check
-        with:
-          terraform-paths: "infrastructure/modules/ml-platform/main.tf infrastructure/modules/ml-platform/variables.tf"
+      - name: Policy gate blocks non-compliant Terraform
+        run: |
+          set -euo pipefail
+          if conftest test --parser hcl2 --combine -p policy examples/terraform/non_compliant/*.tf; then
+            echo "::error::Non-compliant Terraform should have been blocked"; exit 1
+          fi
+          echo "✅ Gate correctly blocked non-compliant infrastructure"
+
+      - name: Gates refuse to pass when they scan nothing
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/empty-scan
+          rc=0; python scripts/pii_scanner.py --path /tmp/empty-scan || rc=$?
+          if [ "$rc" -ne 2 ]; then
+            echo "::error::Empty scan must exit 2 (misconfigured), got $rc"; exit 1
+          fi
+          rc=0; python scripts/model_card_validator.py --path /tmp/empty-scan || rc=$?
+          if [ "$rc" -ne 2 ]; then
+            echo "::error::Empty model-card check must exit 2 (misconfigured), got $rc"; exit 1
+          fi
+          echo "✅ Gates fail closed on an empty scan target"
 
       - name: Evidence Pack (POL-GOV-003)
+        if: always()
         uses: ./.github/actions/evidence-pack
 
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: evidence-pack
           path: evidence/
@@ -103,7 +154,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Trivy filesystem scan
-        uses: aquasecurity/trivy-action@0.28.0
+        # NOTE: the tag is v-prefixed; 'aquasecurity/trivy-action@0.28.0'
+        # does not resolve and fails the job at setup.
+        uses: aquasecurity/trivy-action@v0.33.1
         with:
           scan-type: fs
           severity: CRITICAL,HIGH

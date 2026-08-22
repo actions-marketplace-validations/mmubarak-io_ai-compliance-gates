@@ -12,7 +12,7 @@
 
 locals {
   resource_prefix = "${var.project_name}${var.environment}"
-  
+
   compliance_tags = {
     DataClassification  = var.data_classification
     RetentionDays       = var.retention_days
@@ -27,7 +27,7 @@ locals {
 # ============================================
 resource "azurerm_resource_group" "ml" {
   name     = "rg-${local.resource_prefix}-ml"
-  location = var.location  # uaenorth
+  location = var.location # uaenorth
   tags     = local.compliance_tags
 }
 
@@ -38,18 +38,18 @@ resource "azurerm_storage_account" "ml_data" {
   name                = "st${local.resource_prefix}ml"
   resource_group_name = azurerm_resource_group.ml.name
   location            = azurerm_resource_group.ml.location
-  
+
   account_tier             = "Standard"
   account_replication_type = "GRS"
   account_kind             = "StorageV2"
-  
+
   # POL-SEC-001: Security Controls
   https_traffic_only_enabled      = true
   min_tls_version                 = "TLS1_2"
   allow_nested_items_to_be_public = false
   public_network_access_enabled   = false
   shared_access_key_enabled       = false
-  
+
   blob_properties {
     versioning_enabled = true
     delete_retention_policy {
@@ -89,12 +89,12 @@ resource "azurerm_storage_management_policy" "retention" {
   rule {
     name    = "data-retention-policy"
     enabled = true
-    
+
     filters {
       blob_types   = ["blockBlob"]
       prefix_match = ["ml-datasets/"]
     }
-    
+
     actions {
       base_blob {
         delete_after_days_since_modification_greater_than = var.retention_days
@@ -108,12 +108,12 @@ resource "azurerm_storage_management_policy" "retention" {
   rule {
     name    = "model-archival-policy"
     enabled = true
-    
+
     filters {
       blob_types   = ["blockBlob"]
       prefix_match = ["ml-models/"]
     }
-    
+
     actions {
       base_blob {
         tier_to_cool_after_days_since_modification_greater_than    = 90
@@ -165,16 +165,16 @@ resource "azurerm_monitor_diagnostic_setting" "storage" {
 # Key Vault - Secrets Management
 # ============================================
 resource "azurerm_key_vault" "ml" {
-  name                       = "kv-${local.resource_prefix}-ml"
-  resource_group_name        = azurerm_resource_group.ml.name
-  location                   = azurerm_resource_group.ml.location
-  tenant_id                  = data.azurerm_client_config.current.tenant_id
-  sku_name                   = "standard"
-  soft_delete_retention_days = 90
-  purge_protection_enabled   = true
-  enable_rbac_authorization  = true
+  name                          = "kv-${local.resource_prefix}-ml"
+  resource_group_name           = azurerm_resource_group.ml.name
+  location                      = azurerm_resource_group.ml.location
+  tenant_id                     = data.azurerm_client_config.current.tenant_id
+  sku_name                      = "standard"
+  soft_delete_retention_days    = 90
+  purge_protection_enabled      = true
+  enable_rbac_authorization     = true
   public_network_access_enabled = false
-  tags                       = local.compliance_tags
+  tags                          = local.compliance_tags
 }
 
 data "azurerm_client_config" "current" {}
