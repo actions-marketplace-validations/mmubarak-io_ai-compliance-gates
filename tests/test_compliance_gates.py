@@ -378,7 +378,10 @@ class TestPolicyRegister:
     def _referenced(self):
         found = set()
         paths = [q for d in self.SCAN_DIRS for q in (REPO / d).rglob("*") if q.is_file()]
-        paths += list(REPO.glob("*.md"))
+        # CHANGELOG.md is deliberately excluded: release notes that document a
+        # renumbering have to name the retired ids, so scanning it would make
+        # honest history fail the build.
+        paths += [q for q in REPO.glob("*.md") if q.name != "CHANGELOG.md"]
         for q in paths:
             try:
                 found |= set(self.ID_RE.findall(q.read_text(errors="ignore")))
