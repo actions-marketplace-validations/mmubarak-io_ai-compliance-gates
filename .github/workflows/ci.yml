@@ -162,3 +162,8 @@ jobs:
           severity: CRITICAL,HIGH
           exit-code: "1"
           ignore-unfixed: true
+          # The non-compliant fixture is insecure on purpose: it is the
+          # negative test the policy gate must block. Scanning it would
+          # fail this job by design. Everything else, including the
+          # reference module, is still scanned.
+          skip-dirs: examples/terraform/non_compliant

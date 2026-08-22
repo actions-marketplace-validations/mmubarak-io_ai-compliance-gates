@@ -56,6 +56,13 @@ actually ran.
 
 ### Security
 
+- **The reference module now defaults to deny at the network layer.**
+  `azurerm_storage_account` gained `network_rules { default_action = "Deny" }`
+  and `azurerm_key_vault` gained `network_acls { default_action = "Deny" }`.
+  `public_network_access_enabled = false` alone still left both services
+  reachable through network rules that default to Allow.
+- **Two new POL-SEC-001 rules** enforce exactly that, so the policy pack
+  catches the gap itself instead of relying on an external scanner.
 - **The conftest download is checksum-verified.** `policy-check` pins the
   SHA-256 of the release tarball and refuses to install on mismatch. Bumping
   `conftest-version` now requires supplying the matching `conftest-sha256`.
@@ -78,6 +85,15 @@ actually ran.
   annotations, which require 3.10+, while nothing declared a minimum.
 - Community health files: `SECURITY.md`, `CODE_OF_CONDUCT.md`,
   issue and PR templates, `CODEOWNERS`, Dependabot config.
+
+### Changed (CI)
+
+- The Trivy job now resolves. It referenced `aquasecurity/trivy-action@0.28.0`,
+  but the tag is `v0.28.0`, so the job failed at setup and never scanned
+  anything. Now pinned to `v0.33.1`, with `examples/terraform/non_compliant`
+  excluded because that fixture is insecure by design.
+- `terraform fmt -check` passes. It had never been run against
+  `infrastructure/`, so the job failed and `init` and `validate` never ran.
 
 ### Changed
 

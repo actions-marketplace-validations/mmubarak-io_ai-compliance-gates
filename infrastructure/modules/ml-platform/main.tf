@@ -57,6 +57,14 @@ resource "azurerm_storage_account" "ml_data" {
     }
   }
 
+  # POL-SEC-001: default-deny at the network layer, not just the
+  # public_network_access_enabled switch. Without this an allow-listed
+  # VNet rule is the only thing standing between the data and the internet.
+  network_rules {
+    default_action = "Deny"
+    bypass         = ["AzureServices"]
+  }
+
   identity {
     type = "SystemAssigned"
   }
@@ -175,6 +183,12 @@ resource "azurerm_key_vault" "ml" {
   enable_rbac_authorization     = true
   public_network_access_enabled = false
   tags                          = local.compliance_tags
+
+  # POL-SEC-001: same default-deny posture for secrets.
+  network_acls {
+    default_action = "Deny"
+    bypass         = "AzureServices"
+  }
 }
 
 data "azurerm_client_config" "current" {}

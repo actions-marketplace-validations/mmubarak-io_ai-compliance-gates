@@ -119,6 +119,22 @@ deny contains msg if {
 	msg := sprintf("[POL-SEC-001] Storage container '%s' must be private", [cname])
 }
 
+# Defence in depth: public_network_access_enabled alone leaves the service
+# reachable through network rules that default to Allow. Trivy AZU-0012 and
+# AZU-0013 flagged this gap in the reference module; encoding it here means
+# the policy pack catches it rather than an external scanner.
+deny contains msg if {
+	some name, sa in _of_kind("azurerm_storage_account")
+	not sa.network_rules.default_action == "Deny"
+	msg := sprintf("[POL-SEC-001] Storage account '%s' must set network_rules.default_action to Deny", [name])
+}
+
+deny contains msg if {
+	some name, kv in _of_kind("azurerm_key_vault")
+	not kv.network_acls.default_action == "Deny"
+	msg := sprintf("[POL-SEC-001] Key Vault '%s' must set network_acls.default_action to Deny", [name])
+}
+
 # ------------------------------------------------------------
 # POL-SEC-002: Access Control (RBAC, no shared keys)
 # UAE PDPL Art. 20 / GDPR Art. 32
