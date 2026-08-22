@@ -9,6 +9,7 @@ import json
 import re
 import shutil
 import subprocess
+import xml.etree.ElementTree as ET
 import sys
 from pathlib import Path
 
@@ -403,6 +404,46 @@ class TestPolicyRegister:
                 assert key in entry, f"{entry.get('policy_id')} is missing '{key}'"
             assert entry["regulation"], f"{entry['policy_id']} cites no regulation"
             assert entry["enforced_by"], f"{entry['policy_id']} names no enforcing check"
+
+
+# ---------------------------------------------------------------------------
+# Architecture diagram
+# ---------------------------------------------------------------------------
+class TestArchitectureDiagram:
+    """The README embeds docs/architecture.svg, and a draw.io export can break
+    it in a way that looks fine locally. Exporting with Text Settings set to
+    HTML wraps every label in <foreignObject>; GitHub sanitises SVG in markdown
+    and drops those, falling back to the truncated single-line <text> draw.io
+    emits alongside them. The diagram then renders as 'UAE PDPL...' and loses
+    exactly the regulation citations it exists to show. Export as SVG text."""
+
+    SVG = REPO / "docs/architecture.svg"
+
+    def _texts(self):
+        root = ET.parse(self.SVG).getroot()
+        return [t for t in ("".join(e.itertext()).strip()
+                            for e in root.iter() if e.tag.endswith("}text")) if t]
+
+    def test_parses_as_xml(self):
+        ET.parse(self.SVG)
+
+    def test_no_foreign_objects(self):
+        root = ET.parse(self.SVG).getroot()
+        n = sum(1 for e in root.iter() if e.tag.endswith("}foreignObject"))
+        assert n == 0, (
+            f"{n} <foreignObject> element(s): GitHub strips these, so labels will "
+            f"render from the truncated fallback text. Re-export with Text Settings = SVG."
+        )
+
+    def test_no_truncated_labels(self):
+        bad = [t for t in self._texts() if t.endswith("...") or t.endswith("\u2026")]
+        assert not bad, f"labels clipped by the exporter: {bad}"
+
+    def test_policy_ids_match_the_register(self):
+        register = yaml.safe_load((REPO / "templates/policy_mapping.yml").read_text())
+        defined = {p["policy_id"] for p in register["policies"]}
+        used = set(re.findall(r"POL-[A-Z]+-\d+", " ".join(self._texts())))
+        assert used <= defined, f"diagram cites unknown policy ids: {sorted(used - defined)}"
 
 
 # ---------------------------------------------------------------------------

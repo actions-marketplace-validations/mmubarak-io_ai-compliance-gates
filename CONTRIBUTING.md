@@ -64,6 +64,24 @@ New rules also need a negative fixture proving they actually fire. See
 `examples/terraform/non_compliant/`, which is deliberately split across two
 files so the cross-file rules are exercised.
 
+## Editing the architecture diagram
+
+`docs/architecture.drawio` is the source; `docs/architecture.svg` is what the
+README embeds. When you re-export from draw.io:
+
+**File -> Export as -> SVG, and set Text Settings to `SVG`, not `HTML`.**
+
+The HTML setting wraps every label in `<foreignObject>`. It looks correct in a
+browser, but GitHub sanitises SVG in markdown and drops those elements, so the
+README falls back to the truncated single-line text draw.io emits alongside
+them. The diagram then renders as `UAE PDPL...` and loses the regulation
+citations that are the point of it.
+
+`TestArchitectureDiagram` enforces this: it fails on any `<foreignObject>`, on
+clipped labels, and on policy ids the register does not define. If a label is
+genuinely too long for its shape, widen the shape rather than letting the
+exporter clip it.
+
 ## Pull requests
 
 Fork, branch, commit (short and simple messages), open a PR against `main`.
