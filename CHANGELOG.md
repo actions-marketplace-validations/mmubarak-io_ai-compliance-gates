@@ -107,7 +107,7 @@ actually ran.
   reference a consumer touches changed with it:
 
   ```yaml
-  uses: mmubarak-io/gitops-compliant-ai/.github/workflows/compliance-gates.yml@v1
+  uses: mmubarak-io/ai-compliance-gates/.github/workflows/gates.yml@v1
   ```
 
   GitHub redirects the previous owner path, but that redirect only holds
@@ -117,7 +117,7 @@ actually ran.
 ### Security (supply chain)
 
 - **Third-party actions are pinned to commit SHAs**, not tags, in both
-  `ci.yml` and the reusable `compliance-gates.yml`. A tag is mutable: whoever
+  `ci.yml` and the reusable `gates.yml`. A tag is mutable: whoever
   controls the upstream repository can repoint `v7` at different code, and
   every consumer picks it up silently on the next run. A toolkit that already
   verifies the conftest tarball by SHA-256 should not trust its own CI to a
@@ -133,7 +133,7 @@ actually ran.
   and already force-runs on Node 24.
 - **Self-hosted runner requirement.** Those major versions run on Node 24 and
   need an Actions Runner of at least 2.327.1. GitHub-hosted runners are well
-  past that, but if you consume `compliance-gates.yml` on self-hosted runners,
+  past that, but if you consume `gates.yml` on self-hosted runners,
   update them before moving to this release.
 - The Trivy version stays explicitly pinned to `v0.74.0` rather than taking
   trivy-action's default, so the scan is reproducible across action bumps.
@@ -159,4 +159,4 @@ actually ran.
   rendered from the JSON report.
 - Reusable workflow and README examples reference `@v1` instead of `@main`.
 
-[1.0.0]: https://github.com/mmubarak-io/gitops-compliant-ai/releases/tag/v1.0.0
+[1.0.0]: https://github.com/mmubarak-io/ai-compliance-gates/releases/tag/v1.0.0

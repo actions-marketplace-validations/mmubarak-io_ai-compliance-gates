@@ -17,7 +17,7 @@ body:
         - Model card validation (model_card_validator.py / model-card-check action)
         - Infrastructure policy (Rego pack / policy-check action)
         - Evidence pack (generate_evidence_pack.py / evidence-pack action)
-        - Reusable workflow (compliance-gates.yml)
+        - Reusable workflow (gates.yml)
         - Something else
     validations:
       required: true

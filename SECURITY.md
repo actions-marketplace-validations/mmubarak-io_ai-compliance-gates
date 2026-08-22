@@ -14,7 +14,7 @@ Pin adopting workflows to a release tag (`@v1`), not to `main`.
 Please **do not open a public issue** for a security problem.
 
 Report it through GitHub's private vulnerability reporting:
-[**Report a vulnerability**](https://github.com/mmubarak-io/gitops-compliant-ai/security/advisories/new).
+[**Report a vulnerability**](https://github.com/mmubarak-io/ai-compliance-gates/security/advisories/new).
 That channel is private to the maintainers until an advisory is published.
 
 Please include:

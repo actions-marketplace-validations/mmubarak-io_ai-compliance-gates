@@ -48,7 +48,7 @@ an individual is officially representing the community in public spaces.
 
 Instances of abusive, harassing, or otherwise unacceptable behavior may be
 reported to the community leaders responsible for enforcement via a
-[private report](https://github.com/mmubarak-io/gitops-compliant-ai/security/advisories/new).
+[private report](https://github.com/mmubarak-io/ai-compliance-gates/security/advisories/new).
 All complaints will be reviewed and investigated promptly and fairly.
 
 ## Attribution

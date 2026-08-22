@@ -1,6 +1,8 @@
-# GitOps for Compliant AI
+# AI Compliance Gates
 
-[![CI](https://github.com/mmubarak-io/gitops-compliant-ai/actions/workflows/ci.yml/badge.svg)](https://github.com/mmubarak-io/gitops-compliant-ai/actions/workflows/ci.yml)
+*GitOps for compliant AI: every policy is an executable check that blocks the pipeline.*
+
+[![CI](https://github.com/mmubarak-io/ai-compliance-gates/actions/workflows/ci.yml/badge.svg)](https://github.com/mmubarak-io/ai-compliance-gates/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/downloads/)
 
@@ -12,7 +14,7 @@ not paragraphs in a policy document nobody checks.
 # .github/workflows/compliance.yml: full adoption in one job
 jobs:
   compliance:
-    uses: mmubarak-io/gitops-compliant-ai/.github/workflows/compliance-gates.yml@v1
+    uses: mmubarak-io/ai-compliance-gates/.github/workflows/gates.yml@v1
     with:
       data-path: ./data
       model-cards-path: ./model_cards
@@ -46,10 +48,10 @@ Each gate is also a standalone composite action:
 ```yaml
 steps:
   - uses: actions/checkout@v4
-  - uses: mmubarak-io/gitops-compliant-ai/.github/actions/pii-scan@v1
+  - uses: mmubarak-io/ai-compliance-gates/.github/actions/pii-scan@v1
     with:
       path: ./data
-  - uses: mmubarak-io/gitops-compliant-ai/.github/actions/policy-check@v1
+  - uses: mmubarak-io/ai-compliance-gates/.github/actions/policy-check@v1
     with:
       terraform-paths: "infra/*.tf"
 ```
@@ -90,7 +92,7 @@ that examined nothing. If scanning nothing is genuinely expected, opt in
 explicitly:
 
 ```yaml
-- uses: mmubarak-io/gitops-compliant-ai/.github/actions/pii-scan@v1
+- uses: mmubarak-io/ai-compliance-gates/.github/actions/pii-scan@v1
   with:
     path: ./data
     allow-empty: true   # only if an empty data directory is normal for you
@@ -114,8 +116,8 @@ The same principle runs through the rest of the toolkit:
 Requires **Python 3.11+**.
 
 ```bash
-git clone https://github.com/mmubarak-io/gitops-compliant-ai.git
-cd gitops-compliant-ai
+git clone https://github.com/mmubarak-io/ai-compliance-gates.git
+cd ai-compliance-gates
 pip install -r requirements.txt
 
 # Watch the PII gate block dirty data (Emirates IDs, UAE phones, IBANs)...
@@ -159,7 +161,7 @@ gate works against any HCL.
 ```
 ├── .github/
 │   ├── actions/           # Reusable composite actions (the product)
-│   └── workflows/         # ci.yml (dogfooding) + compliance-gates.yml (workflow_call)
+│   └── workflows/         # ci.yml (dogfooding) + gates.yml (workflow_call)
 ├── scripts/               # Gate engines: PII scan, model cards, evidence pack
 ├── policy/                # OPA/Rego policy pack (UAE PDPL / GDPR profile)
 ├── templates/             # Policy register + compliance.config.yml
