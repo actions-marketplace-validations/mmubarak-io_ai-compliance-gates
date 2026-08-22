@@ -2,7 +2,7 @@ name: CI
 
 # This repo's own pipeline does double duty:
 #   1. unit-tests the toolkit (pytest) across the supported Python range
-#   2. dogfoods the composite actions against examples/ — the demo IS the
+#   2. dogfoods the composite actions against examples/. The demo IS the
 #      integration test, in both directions: the clean fixtures must pass
 #      and the deliberately dirty ones must be blocked.
 

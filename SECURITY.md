@@ -33,7 +33,7 @@ these are in scope:
 
 - **A gate that passes when it should block.** A false negative in the PII
   scanner, the model card validator or the Rego pack is a security issue,
-  not just a bug — it produces an evidence pack asserting compliance that
+  not just a bug. It produces an evidence pack asserting compliance that
   was never verified.
 - **A gate that reports success without checking anything.** Scanning zero
   files must exit `2` (misconfigured), never `0`.
@@ -41,7 +41,7 @@ these are in scope:
   scanned data.
 - **Supply-chain weaknesses** in how the actions install their tools, such
   as an unpinned or unverified download.
-- **Evidence tampering** — anything that lets a run produce an evidence pack
+- **Evidence tampering**: anything that lets a run produce an evidence pack
   that misrepresents what was checked.
 
 Out of scope: findings that require an already-compromised runner, and

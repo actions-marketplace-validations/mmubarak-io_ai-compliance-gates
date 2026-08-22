@@ -12,11 +12,11 @@
 - [ ] Any new policy rule cites the regulation article it enforces
 - [ ] Any example data is **synthetic**
 - [ ] Core dependencies unchanged, or heavyweight deps kept behind `requirements-nlp.txt`
-- [ ] CI is green — the pipeline dogfoods the toolkit against `examples/`
+- [ ] CI is green. The pipeline dogfoods the toolkit against `examples/`
 
 ## Gate behaviour
 
 <!-- Delete if not applicable. -->
 
-- [ ] This makes a gate **stricter** (previously-passing input now blocks) — adopters need a changelog note
-- [ ] This makes a gate **looser** (previously-blocking input now passes) — explain why the old behaviour was a false positive
+- [ ] This makes a gate **stricter** (previously-passing input now blocks): adopters need a changelog note
+- [ ] This makes a gate **looser** (previously-blocking input now passes): explain why the old behaviour was a false positive

@@ -1,5 +1,5 @@
 <mxfile host="app.diagrams.net" agent="gitops-compliant-ai" version="24.7.8">
-  <diagram id="archimate-arch" name="ArchiMate — GitOps Compliant AI">
+  <diagram id="archimate-arch" name="ArchiMate: GitOps Compliant AI">
     <mxGraphModel dx="1422" dy="794" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1240" pageHeight="880" math="0" shadow="0">
       <root>
         <mxCell id="0" />
@@ -39,7 +39,7 @@
         </mxCell>
 
         <!-- ===== Application layer: CI pipeline ===== -->
-        <mxCell id="a-pipe" value="GitHub Actions — Compliant ML Deployment Pipeline" style="html=1;whiteSpace=wrap;shape=mxgraph.archimate3.application;appType=comp;archiType=square;fillColor=#99FFFF;verticalAlign=top;container=1;collapsible=0;" vertex="1" parent="1">
+        <mxCell id="a-pipe" value="GitHub Actions: Compliant ML Deployment Pipeline" style="html=1;whiteSpace=wrap;shape=mxgraph.archimate3.application;appType=comp;archiType=square;fillColor=#99FFFF;verticalAlign=top;container=1;collapsible=0;" vertex="1" parent="1">
           <mxGeometry x="80" y="325" width="820" height="185" as="geometry" />
         </mxCell>
         <mxCell id="a-pii" value="PII Scanner&lt;br&gt;(UAE recognizers)" style="html=1;whiteSpace=wrap;shape=mxgraph.archimate3.application;appType=comp;archiType=square;fillColor=#99FFFF;" vertex="1" parent="a-pipe">
@@ -68,7 +68,7 @@
         <mxCell id="t-tf" value="Terraform Module&lt;br&gt;&lt;i&gt;ml-platform&lt;/i&gt;" style="html=1;whiteSpace=wrap;shape=mxgraph.archimate3.application;appType=artifact;archiType=square;fillColor=#AFFFAF;" vertex="1" parent="1">
           <mxGeometry x="400" y="600" width="200" height="60" as="geometry" />
         </mxCell>
-        <mxCell id="t-azure" value="Azure UAE North — Data Residency (POL-PRIV-007)" style="html=1;whiteSpace=wrap;shape=mxgraph.archimate3.application;appType=node;archiType=square;fillColor=#AFFFAF;verticalAlign=top;container=1;collapsible=0;" vertex="1" parent="1">
+        <mxCell id="t-azure" value="Azure UAE North: Data Residency (POL-PRIV-007)" style="html=1;whiteSpace=wrap;shape=mxgraph.archimate3.application;appType=node;archiType=square;fillColor=#AFFFAF;verticalAlign=top;container=1;collapsible=0;" vertex="1" parent="1">
           <mxGeometry x="680" y="590" width="480" height="230" as="geometry" />
         </mxCell>
         <mxCell id="t-st" value="Storage Account&lt;br&gt;TLS 1.2 · private · RBAC" style="html=1;whiteSpace=wrap;shape=mxgraph.archimate3.application;appType=node;archiType=square;fillColor=#AFFFAF;" vertex="1" parent="t-azure">

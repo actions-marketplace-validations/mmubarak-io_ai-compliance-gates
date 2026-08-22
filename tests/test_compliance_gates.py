@@ -30,7 +30,7 @@ def run_script(script, *argv):
 
 
 # ---------------------------------------------------------------------------
-# PII scanner — detection
+# PII scanner: detection
 # ---------------------------------------------------------------------------
 class TestPIIScanner:
     def test_detects_emirates_id(self, tmp_path):
@@ -74,7 +74,7 @@ class TestPIIScanner:
     # -- regression: false positives ---------------------------------------
     @pytest.mark.parametrize("column", ["filename", "hostname", "renamed_at"])
     def test_column_hint_respects_token_boundaries(self, tmp_path, column):
-        """'name' must not fire on 'filename' — substring matching over-flagged."""
+        """'name' must not fire on 'filename'; substring matching over-flagged."""
         f = tmp_path / "d.csv"
         f.write_text(f"{column},amount\nreport.csv,1\n")
         heuristics = [x for x in PIIScanner().scan_csv(f)["findings"] if x["engine"] == "heuristic"]
@@ -147,7 +147,7 @@ class TestPIIScanner:
 
 
 # ---------------------------------------------------------------------------
-# PII scanner — CLI exit codes (the fail-open class)
+# PII scanner: CLI exit codes (the fail-open class)
 # ---------------------------------------------------------------------------
 class TestPIIScannerExitCodes:
     @pytest.mark.parametrize("fmt", ["json", "github", "pretty"])
@@ -383,7 +383,7 @@ class TestPolicyPack:
 
     def test_cross_file_rules_fire(self):
         """POL-PRIV-007 lives in variables.tf and POL-PRIV-010 is an absence
-        check — both are only correct because conftest runs with --combine."""
+        check. Both are only correct because conftest runs with --combine."""
         r = self._run("examples/terraform/non_compliant/main.tf",
                       "examples/terraform/non_compliant/variables.tf")
         assert "POL-PRIV-007" in r.stdout

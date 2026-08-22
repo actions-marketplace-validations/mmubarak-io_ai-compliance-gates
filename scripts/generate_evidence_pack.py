@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Evidence Pack Generator — Implements POL-GOV-003.
+"""Evidence Pack Generator: implements POL-GOV-003.
 
 Aggregates the outputs of every compliance gate into a single,
 auditor-facing artifact: what was checked, against which policy and
@@ -212,7 +212,7 @@ def main():
     ]
     (out / "evidence_pack.md").write_text("\n".join(lines))
 
-    print(f"Evidence pack written to {out}/ — overall: {overall}")
+    print(f"Evidence pack written to {out}/ (overall: {overall})")
     if pack["gates_not_run"]:
         print(f"  gates not run: {', '.join(pack['gates_not_run'])}")
 

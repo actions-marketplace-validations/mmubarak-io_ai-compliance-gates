@@ -12,7 +12,7 @@ name: Compliance Gates (Reusable)
 #
 # Every gate is opt-in: leave an input empty and that gate is skipped.
 # A gate that runs but finds nothing to check fails as misconfigured
-# rather than reporting success — set the matching allow-empty input
+# rather than reporting success. Set the matching allow-empty input
 # if scanning nothing is genuinely expected.
 
 on:

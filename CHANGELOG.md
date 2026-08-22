@@ -7,13 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Adopters should pin to a release tag (`@v1`). `main` may change without notice.
 
-## [1.0.0] — 2026-08-22
+## [1.0.0] - 2026-08-22
 
 First tagged release. Everything below landed before `v1`, but is listed
 because the fail-open fixes change gate behaviour in ways an adopter needs
 to know about.
 
-### Fixed — gates that reported success without checking
+### Fixed: gates that reported success without checking
 
 These are the reason this release exists. Each one could produce a green
 check, and an evidence pack asserting compliance, for a check that never
@@ -41,7 +41,7 @@ actually ran.
   of omitting it. A crashed gate used to vanish from the artifact entirely,
   leaving a pack that read as a clean bill of health.
 
-### Fixed — detection accuracy
+### Fixed: detection accuracy
 
 - Column-name heuristics match on token boundaries, so `name` no longer
   flags `filename` or `hostname`.
@@ -71,7 +71,7 @@ actually ran.
 - Config validation for `compliance.config.yml`: malformed patterns, bad
   risk values and mis-shaped schemas now produce a specific message naming
   the offending key, instead of a `KeyError` surfacing as a bogus result.
-- `examples/terraform/non_compliant/` — a deliberately non-compliant
+- `examples/terraform/non_compliant/`, a deliberately non-compliant
   Terraform fixture, split across two files so the cross-file rules are
   actually exercised. CI blocks on it as a negative test.
 - Python 3.9–3.12 support and a CI matrix. The scripts used `str | None`

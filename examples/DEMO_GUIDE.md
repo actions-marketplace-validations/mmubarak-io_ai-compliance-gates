@@ -2,10 +2,10 @@
 
 ## Demo 1: UAE PII gate
 ```bash
-# Blocked — Emirates IDs, +971 phones, AE IBANs detected
+# Blocked: Emirates IDs, +971 phones, AE IBANs detected
 python scripts/pii_scanner.py --path ./examples/sample_data/customers.csv
 
-# Passes — anonymized dataset
+# Passes: anonymized dataset
 python scripts/pii_scanner.py --path ./examples/sample_data/customers_anonymized.csv
 ```
 
@@ -20,13 +20,13 @@ python scripts/model_card_validator.py --path ./examples/model_cards/compliant
 
 ## Demo 3: Policy enforcement with OPA
 ```bash
-# Passes — Terraform satisfies the policy register
+# Passes: Terraform satisfies the policy register
 conftest test --parser hcl2 -p policy \
   infrastructure/modules/ml-platform/main.tf \
   infrastructure/modules/ml-platform/variables.tf
 
 # Now edit main.tf: set public_network_access_enabled = true
-# Re-run — fails with [POL-SEC-001] + the PDPL article
+# Re-run: fails with [POL-SEC-001] + the PDPL article
 ```
 
 ## Demo 4: Evidence pack

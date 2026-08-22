@@ -1,12 +1,12 @@
 name: 🐛 Bug report
-description: A gate behaves incorrectly — wrong result, crash, or confusing output.
+description: A gate behaves incorrectly (wrong result, crash, or confusing output).
 labels: ["bug"]
 body:
   - type: markdown
     attributes:
       value: |
         **If a gate PASSED when it should have BLOCKED, please report it privately
-        as a security issue instead** — a false negative produces an evidence pack
+        as a security issue instead**. A false negative produces an evidence pack
         asserting compliance that was never verified.
   - type: dropdown
     id: gate
@@ -34,7 +34,7 @@ body:
       label: Reproduction
       description: >
         The exact command or workflow step, plus a minimal input.
-        **Use synthetic data only — never paste real personal data.**
+        **Use synthetic data only. Never paste real personal data.**
       render: shell
     validations:
       required: true

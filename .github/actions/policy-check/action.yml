@@ -1,5 +1,5 @@
 name: "Infrastructure Policy Enforcement (OPA)"
-description: "Enforces the policy register against Terraform HCL with OPA/Conftest — TLS, data residency, RBAC, audit logging. Implements POL-PRIV/POL-SEC controls."
+description: "Enforces the policy register against Terraform HCL with OPA/Conftest: TLS, data residency, RBAC, audit logging. Implements POL-PRIV/POL-SEC controls."
 branding:
   icon: check-square
   color: purple

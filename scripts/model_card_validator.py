@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Model Card Validator — Implements POL-GOV-002.
+"""Model Card Validator: implements POL-GOV-002.
 
 Validates model cards against documentation requirements derived from:
   - EU AI Act (Regulation 2024/1689), Annex IV technical documentation
@@ -11,7 +11,7 @@ so a failing check tells you *which regulation* you're not meeting.
 
 Exit codes:
   0  every card valid
-  1  at least one card invalid (policy violation — the gate blocks)
+  1  at least one card invalid (policy violation; the gate blocks)
   2  misconfiguration (bad config, or nothing to validate)
 """
 
@@ -30,35 +30,35 @@ EXIT_OK, EXIT_VIOLATION, EXIT_MISCONFIGURED = 0, 1, 2
 REQUIRED = {
     "model_details": {
         "fields": ["name", "version", "date", "type", "architecture"],
-        "basis": "EU AI Act Annex IV(1) — general description of the AI system",
+        "basis": "EU AI Act Annex IV(1): general description of the AI system",
     },
     "intended_use": {
         "fields": ["primary_uses", "out_of_scope_uses", "target_users"],
-        "basis": "EU AI Act Art. 13 — transparency; intended purpose and misuse",
+        "basis": "EU AI Act Art. 13: transparency; intended purpose and misuse",
     },
     "training_data": {
         "fields": ["datasets", "preprocessing", "data_sources"],
-        "basis": "EU AI Act Annex IV(2)(d) — data requirements & provenance; UAE PDPL Art. 5 (lawful collection)",
+        "basis": "EU AI Act Annex IV(2)(d): data requirements & provenance; UAE PDPL Art. 5 (lawful collection)",
     },
     "evaluation": {
         "fields": ["metrics", "datasets", "results"],
-        "basis": "EU AI Act Annex IV(2)(g) — validation and testing procedures",
+        "basis": "EU AI Act Annex IV(2)(g): validation and testing procedures",
     },
     "ethical_considerations": {
         "fields": ["bias_analysis", "fairness_assessment", "harmful_use_mitigation"],
-        "basis": "EU AI Act Art. 9 — risk management; Art. 10(2)(f) — bias examination",
+        "basis": "EU AI Act Art. 9: risk management; Art. 10(2)(f): bias examination",
     },
     "privacy_security": {
         "fields": ["privacy_measures", "data_protection", "security_measures"],
-        "basis": "UAE PDPL Art. 20 — security of processing; GDPR Art. 32",
+        "basis": "UAE PDPL Art. 20: security of processing; GDPR Art. 32",
     },
 }
 
 RECOMMENDED = {
-    "privacy_security.data_subject_rights": "UAE PDPL Art. 13-18 — access, rectification, erasure rights",
-    "privacy_security.legal_basis": "UAE PDPL Art. 4 — lawful basis for processing; GDPR Art. 6",
-    "model_details.risk_classification": "EU AI Act Art. 6 — risk-based classification",
-    "evaluation.human_oversight": "EU AI Act Art. 14 — human oversight measures",
+    "privacy_security.data_subject_rights": "UAE PDPL Art. 13-18: access, rectification, erasure rights",
+    "privacy_security.legal_basis": "UAE PDPL Art. 4: lawful basis for processing; GDPR Art. 6",
+    "model_details.risk_classification": "EU AI Act Art. 6: risk-based classification",
+    "evaluation.human_oversight": "EU AI Act Art. 14: human oversight measures",
 }
 
 
@@ -131,7 +131,7 @@ def load_schema(config_path: str | None):
 
 def discover_files(path: Path) -> list:
     """Model cards to validate. Directories are searched recursively, matching
-    the PII scanner — a non-recursive glob silently skipped nested cards."""
+    the PII scanner. A non-recursive glob silently skipped nested cards."""
     if not path.is_dir():
         return [path]
     return sorted(list(path.rglob("*.yml")) + list(path.rglob("*.yaml")))
@@ -206,7 +206,7 @@ def main():
     if not files and not args.allow_empty:
         _fail(
             f"No model cards (*.yml / *.yaml) found under '{path}'. Refusing to report success for a "
-            f"check that examined nothing — pass --allow-empty if this is intentional.",
+            f"check that examined nothing. Pass --allow-empty if this is intentional.",
             args.output_format,
             "Model Card Check Misconfigured (POL-GOV-002)",
         )

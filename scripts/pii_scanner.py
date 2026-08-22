@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""PII Scanner — Implements POL-PRIV-001 (UAE PDPL Art. 20 / GDPR Art. 32).
+"""PII Scanner: implements POL-PRIV-001 (UAE PDPL Art. 20 / GDPR Art. 32).
 
 Detects PII in tabular data before it enters the ML pipeline, with
 UAE-specific recognizers that generic scanners miss:
@@ -13,7 +13,7 @@ Microsoft Presidio NLP detection when installed.
 
 Exit codes:
   0  no PII found
-  1  PII found (policy violation — the gate blocks)
+  1  PII found (policy violation; the gate blocks)
   2  misconfiguration (bad config, or nothing to scan)
 
 Exit code 2 matters: a gate that scans zero files must not report
@@ -339,7 +339,7 @@ def main():
     if not files and not args.allow_empty:
         _fail(
             f"No CSV files found under '{path}'. Refusing to report success for a scan "
-            f"that examined nothing — pass --allow-empty if this is intentional.",
+            f"that examined nothing. Pass --allow-empty if this is intentional.",
             args.output_format,
             "PII Scan Misconfigured (POL-PRIV-001)",
         )

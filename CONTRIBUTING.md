@@ -1,6 +1,6 @@
 # Contributing
 
-Contributions are welcome — especially new jurisdiction policy packs and
+Contributions are welcome, especially new jurisdiction policy packs and
 PII recognizers.
 
 ## Getting started
@@ -34,7 +34,7 @@ conftest test --parser hcl2 --combine -p policy infrastructure/modules/ml-platfo
 ## Ground rules
 
 - Every gate change needs a test in `tests/`.
-- Every policy rule must cite the regulation it enforces — no rules that
+- Every policy rule must cite the regulation it enforces. No rules that
   exist "because it seems secure."
 - Sample data must be synthetic. Never commit real personal data, even as a
   test fixture.
@@ -58,7 +58,7 @@ looked at. Concretely, when you touch gate logic:
 
 If you add an output format, a discovery path, or an early return, add the
 matching regression test. The existing ones are grouped under
-`TestPIIScannerExitCodes` and `TestModelCardExitCodes` — follow the pattern.
+`TestPIIScannerExitCodes` and `TestModelCardExitCodes`. Follow the pattern.
 
 New rules also need a negative fixture proving they actually fire. See
 `examples/terraform/non_compliant/`, which is deliberately split across two
@@ -67,7 +67,7 @@ files so the cross-file rules are exercised.
 ## Pull requests
 
 Fork, branch, commit (short and simple messages), open a PR against `main`.
-CI must be green — the pipeline dogfoods the toolkit against `examples/`,
+CI must be green. The pipeline dogfoods the toolkit against `examples/`,
 in both directions: clean fixtures must pass and dirty ones must be blocked,
 so a broken gate blocks your PR by design.
 
@@ -77,5 +77,5 @@ know a previously-green build may start failing.
 
 ## Security
 
-A gate that passes when it should block is a security issue, not a bug —
-report it privately via [SECURITY.md](SECURITY.md).
+A gate that passes when it should block is a security issue, not a bug.
+Report it privately via [SECURITY.md](SECURITY.md).

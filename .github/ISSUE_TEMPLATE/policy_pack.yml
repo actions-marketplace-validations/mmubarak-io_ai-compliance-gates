@@ -31,7 +31,7 @@ body:
       label: Regulation provisions
       description: >
         Which articles/sections the rules enforce, one per rule. A rule that
-        can't cite a provision won't be merged — see CONTRIBUTING.md.
+        can't cite a provision won't be merged. See CONTRIBUTING.md.
       placeholder: |
         - Art. 20 (security of processing) -> require TLS 1.2
         - Art. 22 (cross-border transfer) -> restrict region to ...

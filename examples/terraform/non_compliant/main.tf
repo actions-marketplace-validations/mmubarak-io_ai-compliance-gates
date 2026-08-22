@@ -1,4 +1,4 @@
-# Deliberately non-compliant Terraform — the negative fixture for the
+# Deliberately non-compliant Terraform: the negative fixture for the
 # policy gate. Every resource here violates at least one rule in
 # policy/terraform_compliance.rego.
 #

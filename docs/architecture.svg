@@ -40,7 +40,7 @@
   <!-- Application: pipeline container -->
   <rect x="70" y="295" width="810" height="185" fill="#99FFFF" stroke="#3A9DA8"/>
   <rect x="76" y="301" width="16" height="10" fill="#fff" stroke="#3A9DA8"/><rect x="76" y="314" width="16" height="10" fill="#fff" stroke="#3A9DA8"/>
-  <text x="475" y="315" font-size="13" text-anchor="middle" font-weight="bold">GitHub Actions — Compliant ML Deployment Pipeline</text>
+  <text x="475" y="315" font-size="13" text-anchor="middle" font-weight="bold">GitHub Actions: Compliant ML Deployment Pipeline</text>
   <g fill="#CFFFFF" stroke="#3A9DA8">
     <rect x="90" y="335" width="180" height="52"/>
     <rect x="288" y="335" width="180" height="52"/>
@@ -73,7 +73,7 @@
   <text x="485" y="592" font-size="12" text-anchor="middle" font-weight="bold">Terraform Module</text>
   <text x="485" y="609" font-size="10.5" text-anchor="middle" font-style="italic">ml-platform</text>
   <rect x="660" y="555" width="480" height="235" fill="#AFFFAF" stroke="#4E9E4E"/>
-  <text x="900" y="576" font-size="12.5" text-anchor="middle" font-weight="bold">Azure UAE North — Data Residency (POL-PRIV-007)</text>
+  <text x="900" y="576" font-size="12.5" text-anchor="middle" font-weight="bold">Azure UAE North: Data Residency (POL-PRIV-007)</text>
   <g fill="#D6FFD6" stroke="#4E9E4E">
     <rect x="680" y="595" width="210" height="58"/>
     <rect x="910" y="595" width="210" height="58"/>
@@ -137,6 +137,6 @@
     <circle cx="655" cy="846" r="4" fill="#444"/>
     <path d="M655,846 h46" stroke="#444" stroke-width="1.4" fill="none" marker-end="url(#filled)"/>
     <text x="710" y="850">assignment</text>
-    <text x="830" y="850" font-style="italic">ArchiMate 3 notation — editable source: docs/architecture.drawio</text>
+    <text x="830" y="850" font-style="italic">ArchiMate 3 notation, editable source: docs/architecture.drawio</text>
   </g>
 </svg>

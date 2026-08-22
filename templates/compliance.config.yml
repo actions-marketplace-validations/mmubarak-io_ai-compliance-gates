@@ -1,12 +1,12 @@
 # ============================================================
-# compliance.config.yml — customize the gates without forking
+# compliance.config.yml: customize the gates without forking
 # ============================================================
 # Copy this file into your repo and pass it to the gates:
 #   python scripts/pii_scanner.py --path ./data --config compliance.config.yml
 #   python scripts/model_card_validator.py --path ./cards --config compliance.config.yml
 # Or via the composite actions' `config` input.
 #
-# Everything here is optional — omit a key to keep the built-in
+# Everything here is optional. Omit a key to keep the built-in
 # default (UAE PDPL / GDPR / EU AI Act profile).
 # ============================================================
 
@@ -47,8 +47,8 @@ model_cards:
 # ============================================================
 # Validation: this file is validated before any scan runs. A bad regex,
 # a risk outside 1-10, or a required section missing its `basis` stops
-# the gate with exit code 2 and a message naming the offending key —
-# a malformed config is never silently ignored.
+# the gate with exit code 2 and a message naming the offending key.
+# A malformed config is never silently ignored.
 #
 # Empty targets: a gate pointed at a path matching no files exits 2
 # (misconfigured) rather than reporting success. If an empty directory
