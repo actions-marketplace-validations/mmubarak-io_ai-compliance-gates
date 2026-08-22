@@ -88,10 +88,14 @@ actually ran.
 
 ### Changed (CI)
 
-- The Trivy job now resolves. It referenced `aquasecurity/trivy-action@0.28.0`,
-  but the tag is `v0.28.0`, so the job failed at setup and never scanned
-  anything. Now pinned to `v0.33.1`, with `examples/terraform/non_compliant`
-  excluded because that fixture is insecure by design.
+- The Trivy job now actually scans. It had two independent faults: the step
+  referenced `aquasecurity/trivy-action@0.28.0` while the tag is `v0.28.0`,
+  so the job died at setup; and after fixing that, trivy-action `v0.33.1`
+  defaults to trivy `v0.65.0`, which has no GitHub release, so its installer
+  exited 1 and every scan step was silently skipped. Now pinned to
+  trivy-action `v0.33.1` with `version: v0.74.0`, and
+  `examples/terraform/non_compliant` excluded because that fixture is
+  insecure by design.
 - `terraform fmt -check` passes. It had never been run against
   `infrastructure/`, so the job failed and `init` and `validate` never ran.
 
