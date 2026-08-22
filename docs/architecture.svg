@@ -1,0 +1,142 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 880" font-family="Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="open" markerWidth="12" markerHeight="12" refX="10" refY="5" orient="auto"><path d="M2,1 L10,5 L2,9" fill="none" stroke="#444" stroke-width="1.4"/></marker>
+    <marker id="hollow" markerWidth="14" markerHeight="12" refX="11" refY="5" orient="auto"><path d="M1,1 L11,5 L1,9 Z" fill="#fff" stroke="#444" stroke-width="1.2"/></marker>
+    <marker id="filled" markerWidth="14" markerHeight="12" refX="11" refY="5" orient="auto"><path d="M1,1 L11,5 L1,9 Z" fill="#444"/></marker>
+  </defs>
+  <rect width="1200" height="880" fill="#ffffff"/>
+
+  <!-- Layer bands -->
+  <rect x="30" y="15" width="1140" height="105" fill="#F2F0FF" stroke="#9C8FDB" stroke-dasharray="5 4"/>
+  <text x="42" y="34" font-size="12" font-style="italic" fill="#6B5CA5">Motivation</text>
+  <rect x="30" y="135" width="1140" height="110" fill="#FFFCE8" stroke="#C9B458" stroke-dasharray="5 4"/>
+  <text x="42" y="154" font-size="12" font-style="italic" fill="#8A7A1E">Business</text>
+  <rect x="30" y="260" width="1140" height="245" fill="#EBFDFF" stroke="#4FB6C4" stroke-dasharray="5 4"/>
+  <text x="42" y="279" font-size="12" font-style="italic" fill="#1E7D8A">Application</text>
+  <rect x="30" y="520" width="1140" height="290" fill="#EFFFEF" stroke="#6BBF6B" stroke-dasharray="5 4"/>
+  <text x="42" y="539" font-size="12" font-style="italic" fill="#2E7D2E">Technology</text>
+
+  <!-- Motivation: drivers (octagon corners) -->
+  <g stroke="#7A6FB0" fill="#CCCCFF">
+    <polygon points="102,45 328,45 340,57 340,88 328,100 102,100 90,88 90,57"/>
+    <polygon points="497,45 703,45 715,57 715,88 703,100 497,100 485,88 485,57"/>
+    <polygon points="872,45 1098,45 1110,57 1110,88 1098,100 872,100 860,88 860,57"/>
+  </g>
+  <text x="215" y="68" font-size="13" text-anchor="middle" font-weight="bold">UAE PDPL</text>
+  <text x="215" y="86" font-size="11" text-anchor="middle">Federal Decree-Law 45/2021</text>
+  <text x="600" y="78" font-size="13" text-anchor="middle" font-weight="bold">GDPR</text>
+  <text x="985" y="68" font-size="13" text-anchor="middle" font-weight="bold">EU AI Act</text>
+  <text x="985" y="86" font-size="11" text-anchor="middle">Reg. 2024/1689</text>
+
+  <!-- Business -->
+  <rect x="420" y="175" width="360" height="58" fill="#FFFF99" stroke="#B0A030"/>
+  <text x="600" y="198" font-size="13" text-anchor="middle" font-weight="bold">Policy Register</text>
+  <text x="600" y="216" font-size="11" text-anchor="middle" font-style="italic">templates/policy_mapping.yml</text>
+  <rect x="950" y="175" width="180" height="58" fill="#FFFF99" stroke="#B0A030"/>
+  <circle cx="1108" cy="188" r="6" fill="none" stroke="#B0A030"/>
+  <path d="M1108,194 v10 M1101,199 h14 M1108,204 l-6,8 M1108,204 l6,8" fill="none" stroke="#B0A030"/>
+  <text x="1030" y="209" font-size="13" text-anchor="middle" font-weight="bold">DPO / Auditor</text>
+
+  <!-- Application: pipeline container -->
+  <rect x="70" y="295" width="810" height="185" fill="#99FFFF" stroke="#3A9DA8"/>
+  <rect x="76" y="301" width="16" height="10" fill="#fff" stroke="#3A9DA8"/><rect x="76" y="314" width="16" height="10" fill="#fff" stroke="#3A9DA8"/>
+  <text x="475" y="315" font-size="13" text-anchor="middle" font-weight="bold">GitHub Actions — Compliant ML Deployment Pipeline</text>
+  <g fill="#CFFFFF" stroke="#3A9DA8">
+    <rect x="90" y="335" width="180" height="52"/>
+    <rect x="288" y="335" width="180" height="52"/>
+    <rect x="486" y="335" width="180" height="52"/>
+    <rect x="684" y="335" width="180" height="52"/>
+    <rect x="388" y="415" width="180" height="46"/>
+  </g>
+  <text x="180" y="357" font-size="12" text-anchor="middle" font-weight="bold">PII Scanner</text>
+  <text x="180" y="373" font-size="10.5" text-anchor="middle">UAE recognizers</text>
+  <text x="378" y="357" font-size="12" text-anchor="middle" font-weight="bold">Model Card Validator</text>
+  <text x="378" y="373" font-size="10.5" text-anchor="middle">EU AI Act Annex IV</text>
+  <text x="576" y="357" font-size="12" text-anchor="middle" font-weight="bold">OPA / Conftest</text>
+  <text x="576" y="373" font-size="10.5" text-anchor="middle">policy enforcement</text>
+  <text x="774" y="357" font-size="12" text-anchor="middle" font-weight="bold">Trivy</text>
+  <text x="774" y="373" font-size="10.5" text-anchor="middle">security scan</text>
+  <text x="478" y="443" font-size="12" text-anchor="middle" font-weight="bold">Evidence Pack Generator</text>
+
+  <!-- Evidence pack artifact -->
+  <path d="M950,405 h150 l20,20 v42 h-170 Z" fill="#99FFFF" stroke="#3A9DA8"/>
+  <path d="M1100,405 v20 h20" fill="none" stroke="#3A9DA8"/>
+  <text x="1035" y="432" font-size="12" text-anchor="middle" font-weight="bold">Evidence Pack</text>
+  <text x="1035" y="450" font-size="10.5" text-anchor="middle" font-style="italic">json + md, commit-pinned</text>
+
+  <!-- Technology -->
+  <rect x="90" y="565" width="240" height="58" fill="#AFFFAF" stroke="#4E9E4E"/>
+  <text x="210" y="588" font-size="12" text-anchor="middle" font-weight="bold">GitHub Actions Runner</text>
+  <text x="210" y="605" font-size="10.5" text-anchor="middle">ubuntu-latest, credential-free</text>
+  <path d="M390,565 h170 l20,20 v38 h-190 Z" fill="#AFFFAF" stroke="#4E9E4E"/>
+  <path d="M560,565 v20 h20" fill="none" stroke="#4E9E4E"/>
+  <text x="485" y="592" font-size="12" text-anchor="middle" font-weight="bold">Terraform Module</text>
+  <text x="485" y="609" font-size="10.5" text-anchor="middle" font-style="italic">ml-platform</text>
+  <rect x="660" y="555" width="480" height="235" fill="#AFFFAF" stroke="#4E9E4E"/>
+  <text x="900" y="576" font-size="12.5" text-anchor="middle" font-weight="bold">Azure UAE North — Data Residency (POL-PRIV-007)</text>
+  <g fill="#D6FFD6" stroke="#4E9E4E">
+    <rect x="680" y="595" width="210" height="58"/>
+    <rect x="910" y="595" width="210" height="58"/>
+    <rect x="680" y="675" width="210" height="58"/>
+  </g>
+  <text x="785" y="618" font-size="12" text-anchor="middle" font-weight="bold">Storage Account</text>
+  <text x="785" y="635" font-size="10.5" text-anchor="middle">TLS 1.2 · private · RBAC</text>
+  <text x="1015" y="618" font-size="12" text-anchor="middle" font-weight="bold">Key Vault</text>
+  <text x="1015" y="635" font-size="10.5" text-anchor="middle">RBAC · purge protection</text>
+  <text x="785" y="698" font-size="12" text-anchor="middle" font-weight="bold">Log Analytics</text>
+  <text x="785" y="715" font-size="10.5" text-anchor="middle">90-day audit trail</text>
+
+  <!-- Relationships -->
+  <g fill="none" stroke="#444" stroke-width="1.4">
+    <!-- influence: drivers -> register (dashed, open) -->
+    <path d="M240,100 L540,175" stroke-dasharray="7 4" marker-end="url(#open)"/>
+    <path d="M600,100 L600,175" stroke-dasharray="7 4" marker-end="url(#open)"/>
+    <path d="M960,100 L660,175" stroke-dasharray="7 4" marker-end="url(#open)"/>
+    <!-- realization: pipeline -> register (dashed, hollow) -->
+    <path d="M475,295 L560,233" stroke-dasharray="7 4" marker-end="url(#hollow)"/>
+    <!-- flows: gates -> evidence generator (dashed fine, filled) -->
+    <path d="M180,387 L420,415" stroke-dasharray="3 3" marker-end="url(#filled)"/>
+    <path d="M378,387 L450,415" stroke-dasharray="3 3" marker-end="url(#filled)"/>
+    <path d="M576,387 L505,415" stroke-dasharray="3 3" marker-end="url(#filled)"/>
+    <path d="M774,387 L540,415" stroke-dasharray="3 3" marker-end="url(#filled)"/>
+    <!-- access: generator -> evidence pack (dotted, open) -->
+    <path d="M568,438 L950,438" stroke-dasharray="2 4" marker-end="url(#open)"/>
+    <!-- serving: evidence pack -> DPO (solid, open) -->
+    <path d="M1035,405 L1035,233" marker-end="url(#open)"/>
+    <!-- access: OPA -> terraform (dotted, open) -->
+    <path d="M576,387 L500,565" stroke-dasharray="2 4" marker-end="url(#open)"/>
+    <!-- assignment: runner -> pipeline (ball + filled) -->
+    <path d="M210,565 L210,480" marker-end="url(#filled)"/>
+    <circle cx="210" cy="562" r="4" fill="#444"/>
+    <!-- realization: terraform -> azure (dashed, hollow) -->
+    <path d="M580,608 L660,635" stroke-dasharray="7 4" marker-end="url(#hollow)"/>
+  </g>
+  <g font-size="10.5" fill="#333">
+    <text x="330" y="130">influences</text>
+    <text x="530" y="270">realizes (executable checks)</text>
+    <text x="740" y="430">produces</text>
+    <text x="1042" y="320">serves audit</text>
+    <text x="500" y="505">validates HCL</text>
+    <text x="218" y="528">hosts</text>
+    <text x="590" y="640">provisions</text>
+  </g>
+
+  <!-- Legend -->
+  <g font-size="10.5" fill="#333">
+    <rect x="30" y="825" width="1140" height="42" fill="#FAFAFA" stroke="#CCC"/>
+    <path d="M50,846 h50" stroke="#444" stroke-width="1.4" fill="none" stroke-dasharray="7 4" marker-end="url(#open)"/>
+    <text x="108" y="850">influence</text>
+    <path d="M180,846 h50" stroke="#444" stroke-width="1.4" fill="none" stroke-dasharray="7 4" marker-end="url(#hollow)"/>
+    <text x="238" y="850">realization</text>
+    <path d="M315,846 h50" stroke="#444" stroke-width="1.4" fill="none" stroke-dasharray="3 3" marker-end="url(#filled)"/>
+    <text x="373" y="850">flow</text>
+    <path d="M420,846 h50" stroke="#444" stroke-width="1.4" fill="none" stroke-dasharray="2 4" marker-end="url(#open)"/>
+    <text x="478" y="850">access</text>
+    <path d="M535,846 h50" stroke="#444" stroke-width="1.4" fill="none" marker-end="url(#open)"/>
+    <text x="593" y="850">serving</text>
+    <circle cx="655" cy="846" r="4" fill="#444"/>
+    <path d="M655,846 h46" stroke="#444" stroke-width="1.4" fill="none" marker-end="url(#filled)"/>
+    <text x="710" y="850">assignment</text>
+    <text x="830" y="850" font-style="italic">ArchiMate 3 notation — editable source: docs/architecture.drawio</text>
+  </g>
+</svg>

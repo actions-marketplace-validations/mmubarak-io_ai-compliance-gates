@@ -1,0 +1,40 @@
+name: "Infrastructure Policy Enforcement (OPA)"
+description: "Enforces the policy register against Terraform HCL with OPA/Conftest — TLS, data residency, RBAC, audit logging. Implements POL-PRIV/POL-SEC controls."
+branding:
+  icon: check-square
+  color: purple
+inputs:
+  terraform-paths:
+    description: "Space-separated Terraform files or globs to check"
+    required: true
+  policy-dir:
+    description: "Directory of Rego policies (defaults to this repo's UAE policy pack)"
+    required: false
+    default: ""
+  conftest-version:
+    description: "Conftest version to install"
+    required: false
+    default: "0.56.0"
+  output-file:
+    description: "Where to write the JSON report"
+    required: false
+    default: "reports/conftest.json"
+runs:
+  using: composite
+  steps:
+    - name: Install conftest
+      shell: bash
+      run: |
+        if ! command -v conftest >/dev/null; then
+          wget -q "https://github.com/open-policy-agent/conftest/releases/download/v${{ inputs.conftest-version }}/conftest_${{ inputs.conftest-version }}_Linux_x86_64.tar.gz"
+          tar xzf "conftest_${{ inputs.conftest-version }}_Linux_x86_64.tar.gz" conftest
+          sudo mv conftest /usr/local/bin/
+        fi
+    - name: Enforce policies
+      shell: bash
+      run: |
+        POLICY_DIR="${{ inputs.policy-dir }}"
+        [ -z "$POLICY_DIR" ] && POLICY_DIR="${{ github.action_path }}/../../../policy"
+        mkdir -p "$(dirname "${{ inputs.output-file }}")"
+        conftest test --parser hcl2 -p "$POLICY_DIR" ${{ inputs.terraform-paths }} --output json > "${{ inputs.output-file }}" || true
+        conftest test --parser hcl2 -p "$POLICY_DIR" ${{ inputs.terraform-paths }}

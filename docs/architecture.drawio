@@ -1,0 +1,142 @@
+<mxfile host="app.diagrams.net" agent="gitops-compliant-ai" version="24.7.8">
+  <diagram id="archimate-arch" name="ArchiMate — GitOps Compliant AI">
+    <mxGraphModel dx="1422" dy="794" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1240" pageHeight="880" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- ===== Layer bands (visual only) ===== -->
+        <mxCell id="band-mot" value="Motivation" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#F2F0FF;strokeColor=#9C8FDB;dashed=1;verticalAlign=top;align=left;spacingLeft=8;fontStyle=2;fontColor=#6B5CA5;" vertex="1" parent="1">
+          <mxGeometry x="40" y="20" width="1160" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="band-bus" value="Business" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFCE8;strokeColor=#C9B458;dashed=1;verticalAlign=top;align=left;spacingLeft=8;fontStyle=2;fontColor=#8A7A1E;" vertex="1" parent="1">
+          <mxGeometry x="40" y="150" width="1160" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="band-app" value="Application" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#EBFDFF;strokeColor=#4FB6C4;dashed=1;verticalAlign=top;align=left;spacingLeft=8;fontStyle=2;fontColor=#1E7D8A;" vertex="1" parent="1">
+          <mxGeometry x="40" y="290" width="1160" height="240" as="geometry" />
+        </mxCell>
+        <mxCell id="band-tech" value="Technology" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#EFFFEF;strokeColor=#6BBF6B;dashed=1;verticalAlign=top;align=left;spacingLeft=8;fontStyle=2;fontColor=#2E7D2E;" vertex="1" parent="1">
+          <mxGeometry x="40" y="550" width="1160" height="300" as="geometry" />
+        </mxCell>
+
+        <!-- ===== Motivation: Drivers ===== -->
+        <mxCell id="d1" value="UAE PDPL&lt;br&gt;(Federal Decree-Law 45/2021)" style="html=1;whiteSpace=wrap;shape=mxgraph.archimate3.application;appType=driver;archiType=oct;fillColor=#CCCCFF;" vertex="1" parent="1">
+          <mxGeometry x="100" y="50" width="250" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="d2" value="GDPR" style="html=1;whiteSpace=wrap;shape=mxgraph.archimate3.application;appType=driver;archiType=oct;fillColor=#CCCCFF;" vertex="1" parent="1">
+          <mxGeometry x="495" y="50" width="250" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="d3" value="EU AI Act&lt;br&gt;(Reg. 2024/1689)" style="html=1;whiteSpace=wrap;shape=mxgraph.archimate3.application;appType=driver;archiType=oct;fillColor=#CCCCFF;" vertex="1" parent="1">
+          <mxGeometry x="890" y="50" width="250" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- ===== Business layer ===== -->
+        <mxCell id="b-reg" value="Policy Register&lt;br&gt;&lt;i&gt;templates/policy_mapping.yml&lt;/i&gt;" style="html=1;whiteSpace=wrap;shape=mxgraph.archimate3.application;appType=passive;archiType=square;fillColor=#FFFF99;" vertex="1" parent="1">
+          <mxGeometry x="440" y="190" width="360" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="b-dpo" value="DPO / Auditor" style="html=1;whiteSpace=wrap;shape=mxgraph.archimate3.application;appType=actor;archiType=square;fillColor=#FFFF99;" vertex="1" parent="1">
+          <mxGeometry x="960" y="190" width="180" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- ===== Application layer: CI pipeline ===== -->
+        <mxCell id="a-pipe" value="GitHub Actions — Compliant ML Deployment Pipeline" style="html=1;whiteSpace=wrap;shape=mxgraph.archimate3.application;appType=comp;archiType=square;fillColor=#99FFFF;verticalAlign=top;container=1;collapsible=0;" vertex="1" parent="1">
+          <mxGeometry x="80" y="325" width="820" height="185" as="geometry" />
+        </mxCell>
+        <mxCell id="a-pii" value="PII Scanner&lt;br&gt;(UAE recognizers)" style="html=1;whiteSpace=wrap;shape=mxgraph.archimate3.application;appType=comp;archiType=square;fillColor=#99FFFF;" vertex="1" parent="a-pipe">
+          <mxGeometry x="20" y="45" width="180" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="a-mcv" value="Model Card Validator&lt;br&gt;(EU AI Act Annex IV)" style="html=1;whiteSpace=wrap;shape=mxgraph.archimate3.application;appType=comp;archiType=square;fillColor=#99FFFF;" vertex="1" parent="a-pipe">
+          <mxGeometry x="220" y="45" width="180" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="a-opa" value="OPA / Conftest&lt;br&gt;Policy Enforcement" style="html=1;whiteSpace=wrap;shape=mxgraph.archimate3.application;appType=comp;archiType=square;fillColor=#99FFFF;" vertex="1" parent="a-pipe">
+          <mxGeometry x="420" y="45" width="180" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="a-trivy" value="Trivy&lt;br&gt;Security Scan" style="html=1;whiteSpace=wrap;shape=mxgraph.archimate3.application;appType=comp;archiType=square;fillColor=#99FFFF;" vertex="1" parent="a-pipe">
+          <mxGeometry x="620" y="45" width="180" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="a-evd" value="Evidence Pack Generator" style="html=1;whiteSpace=wrap;shape=mxgraph.archimate3.application;appType=comp;archiType=square;fillColor=#99FFFF;" vertex="1" parent="a-pipe">
+          <mxGeometry x="320" y="120" width="180" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="art-evd" value="Evidence Pack&lt;br&gt;&lt;i&gt;json + md, commit-pinned&lt;/i&gt;" style="html=1;whiteSpace=wrap;shape=mxgraph.archimate3.application;appType=artifact;archiType=square;fillColor=#99FFFF;" vertex="1" parent="1">
+          <mxGeometry x="960" y="400" width="180" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- ===== Technology layer ===== -->
+        <mxCell id="t-runner" value="GitHub Actions Runner&lt;br&gt;(ubuntu-latest, credential-free)" style="html=1;whiteSpace=wrap;shape=mxgraph.archimate3.application;appType=node;archiType=square;fillColor=#AFFFAF;" vertex="1" parent="1">
+          <mxGeometry x="100" y="600" width="240" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="t-tf" value="Terraform Module&lt;br&gt;&lt;i&gt;ml-platform&lt;/i&gt;" style="html=1;whiteSpace=wrap;shape=mxgraph.archimate3.application;appType=artifact;archiType=square;fillColor=#AFFFAF;" vertex="1" parent="1">
+          <mxGeometry x="400" y="600" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="t-azure" value="Azure UAE North — Data Residency (POL-PRIV-007)" style="html=1;whiteSpace=wrap;shape=mxgraph.archimate3.application;appType=node;archiType=square;fillColor=#AFFFAF;verticalAlign=top;container=1;collapsible=0;" vertex="1" parent="1">
+          <mxGeometry x="680" y="590" width="480" height="230" as="geometry" />
+        </mxCell>
+        <mxCell id="t-st" value="Storage Account&lt;br&gt;TLS 1.2 · private · RBAC" style="html=1;whiteSpace=wrap;shape=mxgraph.archimate3.application;appType=node;archiType=square;fillColor=#AFFFAF;" vertex="1" parent="t-azure">
+          <mxGeometry x="20" y="45" width="210" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="t-kv" value="Key Vault&lt;br&gt;RBAC · purge protection" style="html=1;whiteSpace=wrap;shape=mxgraph.archimate3.application;appType=node;archiType=square;fillColor=#AFFFAF;" vertex="1" parent="t-azure">
+          <mxGeometry x="250" y="45" width="210" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="t-log" value="Log Analytics&lt;br&gt;90-day audit trail" style="html=1;whiteSpace=wrap;shape=mxgraph.archimate3.application;appType=node;archiType=square;fillColor=#AFFFAF;" vertex="1" parent="t-azure">
+          <mxGeometry x="20" y="130" width="210" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- ===== Relationships ===== -->
+        <!-- Influence: drivers -> policy register -->
+        <mxCell id="e-d1" value="influences" style="html=1;endArrow=open;endFill=0;dashed=1;dashPattern=6 4;fontSize=10;" edge="1" parent="1" source="d1" target="b-reg">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-d2" style="html=1;endArrow=open;endFill=0;dashed=1;dashPattern=6 4;" edge="1" parent="1" source="d2" target="b-reg">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-d3" style="html=1;endArrow=open;endFill=0;dashed=1;dashPattern=6 4;" edge="1" parent="1" source="d3" target="b-reg">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Realization: pipeline realizes the policy register as executable checks -->
+        <mxCell id="e-real" value="realizes (executable checks)" style="html=1;endArrow=block;endFill=0;dashed=1;fontSize=10;" edge="1" parent="1" source="a-pipe" target="b-reg">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Flows: gates -> evidence generator -->
+        <mxCell id="e-f1" style="html=1;endArrow=block;endFill=1;dashed=1;dashPattern=2 3;" edge="1" parent="a-pipe" source="a-pii" target="a-evd">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-f2" style="html=1;endArrow=block;endFill=1;dashed=1;dashPattern=2 3;" edge="1" parent="a-pipe" source="a-mcv" target="a-evd">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-f3" style="html=1;endArrow=block;endFill=1;dashed=1;dashPattern=2 3;" edge="1" parent="a-pipe" source="a-opa" target="a-evd">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-f4" style="html=1;endArrow=block;endFill=1;dashed=1;dashPattern=2 3;" edge="1" parent="a-pipe" source="a-trivy" target="a-evd">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Access: evidence generator writes the evidence pack -->
+        <mxCell id="e-acc1" value="produces" style="html=1;endArrow=open;endFill=0;dashed=1;dashPattern=1 4;fontSize=10;" edge="1" parent="1" source="a-evd" target="art-evd">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Serving: evidence pack serves the DPO/auditor -->
+        <mxCell id="e-serv" value="serves audit" style="html=1;endArrow=open;endFill=0;fontSize=10;" edge="1" parent="1" source="art-evd" target="b-dpo">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Access: OPA validates the Terraform HCL -->
+        <mxCell id="e-acc2" value="validates HCL" style="html=1;endArrow=open;endFill=0;dashed=1;dashPattern=1 4;fontSize=10;" edge="1" parent="1" source="a-opa" target="t-tf">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Assignment: runner hosts the pipeline -->
+        <mxCell id="e-asg" value="hosts" style="html=1;startArrow=oval;startFill=1;endArrow=block;endFill=1;fontSize=10;" edge="1" parent="1" source="t-runner" target="a-pipe">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Realization: terraform provisions Azure -->
+        <mxCell id="e-real2" value="provisions" style="html=1;endArrow=block;endFill=0;dashed=1;fontSize=10;" edge="1" parent="1" source="t-tf" target="t-azure">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

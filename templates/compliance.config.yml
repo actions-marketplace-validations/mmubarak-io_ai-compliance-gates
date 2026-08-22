@@ -1,0 +1,43 @@
+# ============================================================
+# compliance.config.yml — customize the gates without forking
+# ============================================================
+# Copy this file into your repo and pass it to the gates:
+#   python scripts/pii_scanner.py --path ./data --config compliance.config.yml
+#   python scripts/model_card_validator.py --path ./cards --config compliance.config.yml
+# Or via the composite actions' `config` input.
+#
+# Everything here is optional — omit a key to keep the built-in
+# default (UAE PDPL / GDPR / EU AI Act profile).
+# ============================================================
+
+pii_scan:
+  # Rows sampled per column for value scanning
+  sample_rows: 50
+
+  # Add organization- or jurisdiction-specific patterns.
+  # Example: KSA national ID (Iqama) for teams under KSA PDPL.
+  custom_patterns:
+    SA_NATIONAL_ID:
+      regex: '\b[12]\d{9}\b'
+      risk: 10
+      description: "KSA National ID / Iqama"
+
+  # Disable built-in patterns that don't apply to you
+  disable_patterns: []
+  #  - AE_IBAN
+
+  # Extra column-name heuristics (column substring -> risk 1-10)
+  column_hints:
+    iqama: 10
+
+model_cards:
+  # Uncomment to fully replace the built-in schema (EU AI Act Annex IV
+  # profile). Each section lists its fields and the regulation basis
+  # reported when the check fails.
+  #
+  # required:
+  #   model_details:
+  #     fields: [name, version, date]
+  #     basis: "Internal policy DOC-001"
+  # recommended:
+  #   model_details.owner: "Internal policy DOC-002"

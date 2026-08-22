@@ -1,0 +1,30 @@
+name: "PII Scan (UAE-aware)"
+description: "Blocks datasets containing PII, including UAE-specific patterns (Emirates ID, +971 phones, AE IBAN). Implements POL-PRIV-001 / UAE PDPL Art. 20 / GDPR Art. 32."
+branding:
+  icon: shield
+  color: red
+inputs:
+  path:
+    description: "File or directory of CSVs to scan"
+    required: true
+  config:
+    description: "Optional compliance.config.yml to extend/override patterns"
+    required: false
+    default: ""
+  output-file:
+    description: "Where to write the JSON report (consumed by the evidence-pack action)"
+    required: false
+    default: "reports/pii_scan.json"
+runs:
+  using: composite
+  steps:
+    - name: Install dependencies
+      shell: bash
+      run: pip install --quiet pandas pyyaml
+    - name: Scan for PII
+      shell: bash
+      run: |
+        mkdir -p "$(dirname "${{ inputs.output-file }}")"
+        ARGS=(--path "${{ inputs.path }}" --output-format github --output-file "${{ inputs.output-file }}")
+        [ -n "${{ inputs.config }}" ] && ARGS+=(--config "${{ inputs.config }}")
+        python "${{ github.action_path }}/../../../scripts/pii_scanner.py" "${ARGS[@]}"

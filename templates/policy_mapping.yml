@@ -1,16 +1,86 @@
+# ============================================================
+# Policy Register — the single source of truth for compliance
+# ============================================================
+# Every policy lists:
+#   regulation:  the legal provision(s) it implements
+#   control:     the technical control that satisfies it
+#   enforced_by: where in the pipeline it is machine-checked
+#
+# Nothing in this file is decorative: each `enforced_by` entry
+# points to an executable check that blocks the pipeline.
+# ============================================================
+
 policies:
   - policy_id: "POL-PRIV-001"
-    name: "Data Protection"
-    azure: "min_tls_version = TLS1_2"
+    name: "Data Protection (at rest, in transit, and pre-ingestion)"
+    regulation:
+      - "UAE PDPL Art. 20 — security of processing"
+      - "GDPR Art. 32 — security of processing"
+    control: "TLS 1.2 enforced; HTTPS-only; PII blocked from entering pipeline"
+    enforced_by:
+      - "policy/terraform_compliance.rego (min_tls_version, https_traffic_only_enabled)"
+      - "scripts/pii_scanner.py (CI gate: compliance-check)"
+
   - policy_id: "POL-PRIV-006"
     name: "Data Retention"
-    azure: "delete_after_days = 90"
+    regulation:
+      - "UAE PDPL Art. 9 — retention limits"
+      - "GDPR Art. 5(1)(e) — storage limitation"
+    control: "Blob delete retention policy; audit log retention >= 90 days"
+    enforced_by:
+      - "policy/terraform_compliance.rego (delete_retention_policy, retention_in_days)"
+
   - policy_id: "POL-PRIV-007"
-    name: "Data Residency"
-    azure: "location = uaenorth"
+    name: "Data Residency (UAE)"
+    regulation:
+      - "UAE PDPL Art. 22-23 — cross-border transfer restrictions"
+    control: "All resources deployed to uaenorth/uaecentral only"
+    enforced_by:
+      - "policy/terraform_compliance.rego (location allow-list)"
+
   - policy_id: "POL-SEC-001"
-    name: "Information Security"
-    azure: "public_network_access_enabled = false"
+    name: "Information Security — No Public Exposure"
+    regulation:
+      - "UAE PDPL Art. 20"
+      - "GDPR Art. 32"
+    control: "Public network access disabled; private containers only"
+    enforced_by:
+      - "policy/terraform_compliance.rego (public_network_access_enabled, container_access_type)"
+
+  - policy_id: "POL-SEC-002"
+    name: "Access Control"
+    regulation:
+      - "UAE PDPL Art. 20"
+      - "GDPR Art. 32"
+    control: "RBAC authorization; shared access keys disabled; managed identity"
+    enforced_by:
+      - "policy/terraform_compliance.rego (shared_access_key_enabled, enable_rbac_authorization)"
+
   - policy_id: "POL-PRIV-010"
     name: "Audit Logging"
-    azure: "azurerm_monitor_diagnostic_setting"
+    regulation:
+      - "UAE PDPL Art. 20"
+      - "GDPR Art. 30 — records of processing activities"
+    control: "Diagnostic settings stream storage read/write/delete to Log Analytics"
+    enforced_by:
+      - "policy/terraform_compliance.rego (azurerm_monitor_diagnostic_setting)"
+
+  - policy_id: "POL-GOV-002"
+    name: "AI System Documentation"
+    regulation:
+      - "EU AI Act Annex IV — technical documentation"
+      - "EU AI Act Art. 9 (risk mgmt), Art. 13 (transparency), Art. 14 (human oversight)"
+      - "UAE PDPL Art. 4-5, 13-18"
+    control: "Model cards validated for completeness before deployment"
+    enforced_by:
+      - "scripts/model_card_validator.py (CI gate: compliance-check)"
+
+  - policy_id: "POL-GOV-003"
+    name: "Accountability & Evidence"
+    regulation:
+      - "GDPR Art. 5(2) — accountability"
+      - "EU AI Act Art. 12 — record-keeping"
+      - "UAE PDPL Art. 20 — demonstrable measures"
+    control: "Signed-off evidence pack generated on every pipeline run"
+    enforced_by:
+      - "scripts/generate_evidence_pack.py (CI job: evidence-pack)"

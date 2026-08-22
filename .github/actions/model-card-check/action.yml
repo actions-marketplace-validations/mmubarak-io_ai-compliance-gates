@@ -1,0 +1,30 @@
+name: "Model Card Validation (EU AI Act)"
+description: "Validates AI model cards against EU AI Act Annex IV / UAE PDPL documentation requirements, citing the article behind every failure. Implements POL-GOV-002."
+branding:
+  icon: file-text
+  color: blue
+inputs:
+  path:
+    description: "File or directory of model card YAMLs"
+    required: true
+  config:
+    description: "Optional compliance.config.yml with a custom schema"
+    required: false
+    default: ""
+  output-file:
+    description: "Where to write the JSON report"
+    required: false
+    default: "reports/model_cards.json"
+runs:
+  using: composite
+  steps:
+    - name: Install dependencies
+      shell: bash
+      run: pip install --quiet pyyaml
+    - name: Validate model cards
+      shell: bash
+      run: |
+        mkdir -p "$(dirname "${{ inputs.output-file }}")"
+        ARGS=(--path "${{ inputs.path }}" --output-format github --output-file "${{ inputs.output-file }}")
+        [ -n "${{ inputs.config }}" ] && ARGS+=(--config "${{ inputs.config }}")
+        python "${{ github.action_path }}/../../../scripts/model_card_validator.py" "${ARGS[@]}"

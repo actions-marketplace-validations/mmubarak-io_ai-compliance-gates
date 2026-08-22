@@ -1,0 +1,111 @@
+name: CI
+
+# This repo's own pipeline does double duty:
+#   1. unit-tests the toolkit (pytest)
+#   2. dogfoods the composite actions against examples/ — the demo IS the
+#      integration test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  unit-tests:
+    name: "🧪 Unit Tests"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install -r requirements.txt pytest
+      - run: pytest tests/ -v
+
+  compliance-gates:
+    name: "🔍 Compliance Gates (dogfooding)"
+    runs-on: ubuntu-latest
+    needs: unit-tests
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: PII Scan (POL-PRIV-001)
+        uses: ./.github/actions/pii-scan
+        with:
+          path: ./examples/sample_data/customers_anonymized.csv
+
+      - name: PII Scan blocks dirty data (negative test)
+        run: |
+          if python scripts/pii_scanner.py --path ./examples/sample_data/customers.csv --output-format github; then
+            echo "::error::Dirty dataset should have been blocked"; exit 1
+          fi
+          echo "✅ Gate correctly blocked PII-laden dataset"
+
+      - name: Model Card Validation (POL-GOV-002)
+        uses: ./.github/actions/model-card-check
+        with:
+          path: ./examples/model_cards/compliant
+
+      - name: Model card gate blocks non-compliant card (negative test)
+        run: |
+          if python scripts/model_card_validator.py --path ./examples/model_cards/non_compliant --output-format github; then
+            echo "::error::Non-compliant card should have failed"; exit 1
+          fi
+          echo "✅ Gate correctly blocked incomplete model card"
+
+      - name: Infrastructure Policy Enforcement (POL-PRIV/SEC)
+        uses: ./.github/actions/policy-check
+        with:
+          terraform-paths: "infrastructure/modules/ml-platform/main.tf infrastructure/modules/ml-platform/variables.tf"
+
+      - name: Evidence Pack (POL-GOV-003)
+        uses: ./.github/actions/evidence-pack
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: evidence-pack
+          path: evidence/
+          retention-days: 90
+
+  terraform-validate:
+    name: "🏗️ Terraform Static Validation"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.9.x"
+      - name: Format check
+        working-directory: ./infrastructure
+        run: terraform fmt -check -recursive
+      - name: Init (no backend, no credentials)
+        working-directory: ./infrastructure
+        run: terraform init -backend=false
+      - name: Validate
+        working-directory: ./infrastructure
+        run: terraform validate
+
+  security-scan:
+    name: "🛡️ Security Scan"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Trivy filesystem scan
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: fs
+          severity: CRITICAL,HIGH
+          exit-code: "1"
+          ignore-unfixed: true

@@ -1,0 +1,6 @@
+customer_id,name,email,phone,address,purchase_amount,segment,emirates_id,iban
+1,Ahmed Al-Rashid,ahmed.rashid@email.com,+971-50-123-4567,123 Sheikh Zayed Rd,1500.00,premium,784-1985-1234567-1,AE07 033 1234567890123456
+2,Sarah Johnson,sarah.j@company.ae,+971-55-987-6543,456 Marina Walk,750.50,standard,784-1990-7654321-2,AE21 044 6543210987654321
+3,Mohammed Khan,m.khan@dubai.ae,+971-52-456-7890,789 JBR Beach,2200.00,premium,784-1978-9876543-3,AE45 026 1111222233334444
+4,Lisa Chen,lisa.chen@example.com,+971-56-321-0987,321 Downtown Blvd,450.00,basic,784-1995-1122334-4,AE12 033 5555666677778888
+5,Omar Hassan,omar.h@gmail.com,+971-54-111-2222,555 Palm Jumeirah,3100.00,vip,784-1982-5566778-5,AE89 044 9999000011112222

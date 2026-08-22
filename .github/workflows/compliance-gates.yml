@@ -1,0 +1,84 @@
+name: Compliance Gates (Reusable)
+
+# Adopt the full pipeline from your own repo:
+#
+#   jobs:
+#     compliance:
+#       uses: MohamedMubarak123/gitops-compliant-ai/.github/workflows/compliance-gates.yml@v1
+#       with:
+#         data-path: ./data
+#         model-cards-path: ./model_cards
+#         terraform-paths: "infra/*.tf"
+
+on:
+  workflow_call:
+    inputs:
+      data-path:
+        description: "CSV file or directory to scan for PII"
+        type: string
+        required: false
+        default: ""
+      model-cards-path:
+        description: "Model card file or directory to validate"
+        type: string
+        required: false
+        default: ""
+      terraform-paths:
+        description: "Space-separated Terraform files/globs to enforce policies against"
+        type: string
+        required: false
+        default: ""
+      config:
+        description: "Path to your compliance.config.yml"
+        type: string
+        required: false
+        default: ""
+      evidence-retention-days:
+        description: "How long to retain the evidence pack artifact"
+        type: number
+        required: false
+        default: 90
+
+jobs:
+  gates:
+    name: "🔍 Compliance Gates"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: PII Scan (POL-PRIV-001)
+        if: inputs.data-path != ''
+        uses: MohamedMubarak123/gitops-compliant-ai/.github/actions/pii-scan@main
+        with:
+          path: ${{ inputs.data-path }}
+          config: ${{ inputs.config }}
+
+      - name: Model Card Validation (POL-GOV-002)
+        if: inputs.model-cards-path != ''
+        uses: MohamedMubarak123/gitops-compliant-ai/.github/actions/model-card-check@main
+        with:
+          path: ${{ inputs.model-cards-path }}
+          config: ${{ inputs.config }}
+
+      - name: Infrastructure Policy Enforcement (POL-PRIV/SEC)
+        if: inputs.terraform-paths != ''
+        uses: MohamedMubarak123/gitops-compliant-ai/.github/actions/policy-check@main
+        with:
+          terraform-paths: ${{ inputs.terraform-paths }}
+
+      - name: Evidence Pack (POL-GOV-003)
+        if: always()
+        uses: MohamedMubarak123/gitops-compliant-ai/.github/actions/evidence-pack@main
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: evidence-pack
+          path: evidence/
+          retention-days: ${{ inputs.evidence-retention-days }}

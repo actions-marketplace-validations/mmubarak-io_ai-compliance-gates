@@ -1,0 +1,46 @@
+name: "Compliance Evidence Pack"
+description: "Aggregates gate results into an auditor-facing, commit-pinned artifact. Implements POL-GOV-003 / GDPR Art. 5(2) / EU AI Act Art. 12."
+branding:
+  icon: package
+  color: green
+inputs:
+  pii-report:
+    description: "Path to the PII scan JSON report"
+    required: false
+    default: "reports/pii_scan.json"
+  model-card-report:
+    description: "Path to the model card JSON report"
+    required: false
+    default: "reports/model_cards.json"
+  conftest-report:
+    description: "Path to the conftest JSON report"
+    required: false
+    default: "reports/conftest.json"
+  policy-mapping:
+    description: "Path to the policy register YAML (defaults to this repo's register)"
+    required: false
+    default: ""
+  output-dir:
+    description: "Directory to write evidence_pack.json / .md"
+    required: false
+    default: "evidence"
+runs:
+  using: composite
+  steps:
+    - name: Install dependencies
+      shell: bash
+      run: pip install --quiet pyyaml
+    - name: Generate evidence pack
+      shell: bash
+      run: |
+        MAPPING="${{ inputs.policy-mapping }}"
+        [ -z "$MAPPING" ] && MAPPING="${{ github.action_path }}/../../../templates/policy_mapping.yml"
+        python "${{ github.action_path }}/../../../scripts/generate_evidence_pack.py" \
+          --pii-report "${{ inputs.pii-report }}" \
+          --model-card-report "${{ inputs.model-card-report }}" \
+          --conftest-report "${{ inputs.conftest-report }}" \
+          --policy-mapping "$MAPPING" \
+          --output-dir "${{ inputs.output-dir }}"
+    - name: Publish job summary
+      shell: bash
+      run: cat "${{ inputs.output-dir }}/evidence_pack.md" >> "$GITHUB_STEP_SUMMARY"
