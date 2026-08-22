@@ -81,10 +81,25 @@ actually ran.
 - `examples/terraform/non_compliant/`, a deliberately non-compliant
   Terraform fixture, split across two files so the cross-file rules are
   actually exercised. CI blocks on it as a negative test.
-- Python 3.9–3.12 support and a CI matrix. The scripts used `str | None`
-  annotations, which require 3.10+, while nothing declared a minimum.
+- Python 3.11, 3.12 and 3.13 CI matrix. The scripts used `str | None`
+  annotations, which require 3.10+, while nothing declared a minimum at all.
 - Community health files: `SECURITY.md`, `CODE_OF_CONDUCT.md`,
   issue and PR templates, `CODEOWNERS`, Dependabot config.
+
+### Changed
+
+- **Minimum Python is now 3.11.** Python 3.9 reached end of life in October
+  2025, and pandas 3.x requires 3.11 or newer. A toolkit whose job is to
+  assert compliance should not run its gates on an unpatched interpreter.
+  The CI matrix is now 3.11, 3.12 and 3.13.
+- **The composite actions install from `requirements.txt`.** They previously
+  ran `pip install pandas pyyaml` with no constraint, so an adopter's gate
+  used whatever version happened to be newest that day and could drift from
+  the versions this project tests. The gates that only need PyYAML use the
+  same file as a constraints file.
+- Dependency floors stay permissive (`pandas>=2.0.0`, `pyyaml>=6.0`). Both
+  pandas 2.3.3 and pandas 3.0.5 pass the full suite on 3.12, so narrowing
+  the floor would drop working configurations for no gain.
 
 ### Changed (CI)
 

@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/MohamedMubarak123/gitops-compliant-ai/actions/workflows/ci.yml/badge.svg)](https://github.com/MohamedMubarak123/gitops-compliant-ai/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-blue.svg)](https://www.python.org/downloads/)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/downloads/)
 
 **Drop-in compliance gates for ML pipelines**: reusable GitHub Actions that
 make UAE PDPL, GDPR, and EU AI Act requirements *machine-enforced* in CI,
@@ -111,7 +111,7 @@ The same principle runs through the rest of the toolkit:
 
 ## Try it locally
 
-Requires **Python 3.9+**.
+Requires **Python 3.11+**.
 
 ```bash
 git clone https://github.com/MohamedMubarak123/gitops-compliant-ai.git

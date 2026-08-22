@@ -24,9 +24,14 @@ runs:
   steps:
     - name: Install dependencies
       shell: bash
+      # requirements.txt is used as a constraints file: this gate only needs
+      # pyyaml, but the version still comes from the project's declaration
+      # instead of whatever happens to be newest that day.
+      env:
+        REQUIREMENTS: ${{ github.action_path }}/../../../requirements.txt
       run: |
         set -euo pipefail
-        pip install --quiet pyyaml
+        pip install --quiet -c "$REQUIREMENTS" pyyaml
     - name: Validate model cards
       shell: bash
       env:

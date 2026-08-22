@@ -26,9 +26,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # 3.9 is the floor the scripts actually support; pinning only 3.11
-        # hid a syntax incompatibility from anyone running an older runtime.
-        python-version: ["3.9", "3.11", "3.12"]
+        # 3.11 is the floor: Python 3.9 reached end of life in October 2025
+        # and pandas 3.x requires >=3.11. A compliance gate should not invite
+        # adopters to run on an unpatched runtime.
+        python-version: ["3.11", "3.12", "3.13"]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

@@ -5,7 +5,7 @@ PII recognizers.
 
 ## Getting started
 
-Requires **Python 3.9+**.
+Requires **Python 3.11+**.
 
 ```bash
 pip install -r requirements.txt pytest

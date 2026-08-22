@@ -24,9 +24,14 @@ runs:
   steps:
     - name: Install dependencies
       shell: bash
+      # Installs from this repo's requirements.txt rather than bare package
+      # names, so the versions a gate runs against are the ones the project
+      # declares and tests. A bare `pip install pandas` silently drifts.
+      env:
+        REQUIREMENTS: ${{ github.action_path }}/../../../requirements.txt
       run: |
         set -euo pipefail
-        pip install --quiet pandas pyyaml
+        pip install --quiet -r "$REQUIREMENTS"
     - name: Scan for PII
       shell: bash
       # Inputs are passed through env rather than interpolated into the script
