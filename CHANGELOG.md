@@ -101,6 +101,18 @@ actually ran.
   pandas 2.3.3 and pandas 3.0.5 pass the full suite on 3.12, so narrowing
   the floor would drop working configurations for no gain.
 
+### Fixed (policy register)
+
+- **`POL-GOV-001` was emitted by a gate but missing from the register.** The
+  Rego pack can fail a build with `[POL-GOV-001] compliance_tags must declare
+  ...`, yet `templates/policy_mapping.yml`, which calls itself the single
+  source of truth, had no entry for it. Added, with its regulation basis and
+  enforcing check.
+- Added `TestPolicyRegister`, which asserts every policy id emitted anywhere
+  in the toolkit is defined in the register, that no register entry is
+  unenforced, and that each entry cites a regulation and a check. The drift
+  that produced the bug above now fails CI.
+
 ### Changed (namespace)
 
 - **The project moved to the `mmubarak-io` GitHub namespace.** Every

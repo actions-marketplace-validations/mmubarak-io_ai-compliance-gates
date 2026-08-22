@@ -6,6 +6,7 @@ because it produces an evidence pack that reads as proof of compliance.
 """
 
 import json
+import re
 import shutil
 import subprocess
 import sys
@@ -356,6 +357,49 @@ class TestEvidencePack:
         out = tmp_path / "evidence"
         r = run_script("generate_evidence_pack.py", "--output-dir", str(out), "--fail-on-violation")
         assert r.returncode == 1
+
+
+# ---------------------------------------------------------------------------
+# Policy register
+# ---------------------------------------------------------------------------
+class TestPolicyRegister:
+    """templates/policy_mapping.yml calls itself the single source of truth,
+    so a policy id that a gate can emit must actually be defined there. A
+    build failing with an id the register does not contain is exactly the
+    drift this file exists to prevent."""
+
+    REGISTER = REPO / "templates/policy_mapping.yml"
+    SCAN_DIRS = ["scripts", "policy", ".github", "templates"]
+    ID_RE = re.compile(r"POL-[A-Z]+-\d+")
+
+    def _defined(self):
+        return {p["policy_id"] for p in yaml.safe_load(self.REGISTER.read_text())["policies"]}
+
+    def _referenced(self):
+        found = set()
+        paths = [q for d in self.SCAN_DIRS for q in (REPO / d).rglob("*") if q.is_file()]
+        paths += list(REPO.glob("*.md"))
+        for q in paths:
+            try:
+                found |= set(self.ID_RE.findall(q.read_text(errors="ignore")))
+            except OSError:
+                continue
+        return found
+
+    def test_every_referenced_id_is_defined(self):
+        undefined = self._referenced() - self._defined()
+        assert not undefined, f"policy ids emitted but absent from the register: {sorted(undefined)}"
+
+    def test_no_orphan_entries(self):
+        orphans = self._defined() - self._referenced()
+        assert not orphans, f"register entries nothing enforces: {sorted(orphans)}"
+
+    def test_every_entry_has_the_full_schema(self):
+        for entry in yaml.safe_load(self.REGISTER.read_text())["policies"]:
+            for key in ("policy_id", "name", "regulation", "control", "enforced_by"):
+                assert key in entry, f"{entry.get('policy_id')} is missing '{key}'"
+            assert entry["regulation"], f"{entry['policy_id']} cites no regulation"
+            assert entry["enforced_by"], f"{entry['policy_id']} names no enforcing check"
 
 
 # ---------------------------------------------------------------------------

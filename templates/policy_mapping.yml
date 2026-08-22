@@ -65,6 +65,16 @@ policies:
     enforced_by:
       - "policy/terraform_compliance.rego (azurerm_monitor_diagnostic_setting)"
 
+  - policy_id: "POL-GOV-001"
+    name: "Governance Metadata (Resource Classification)"
+    regulation:
+      - "EU AI Act Art. 11: technical documentation traceability"
+      - "GDPR Art. 30: records of processing activities"
+      - "UAE PDPL Art. 20: demonstrable measures"
+    control: "Every provisioned resource declares DataClassification, RetentionDays, ContainsPII and ComplianceFramework tags"
+    enforced_by:
+      - "policy/terraform_compliance.rego (compliance_tags required_tags)"
+
   - policy_id: "POL-GOV-002"
     name: "AI System Documentation"
     regulation:
