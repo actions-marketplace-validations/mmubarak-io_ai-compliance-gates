@@ -101,6 +101,20 @@ actually ran.
   pandas 2.3.3 and pandas 3.0.5 pass the full suite on 3.12, so narrowing
   the floor would drop working configurations for no gain.
 
+### Changed (actions)
+
+- Bumped the third-party actions this project uses: `actions/checkout` 4 to 7,
+  `actions/setup-python` 5 to 7, `actions/upload-artifact` 4 to 7,
+  `hashicorp/setup-terraform` 3 to 4, and `aquasecurity/trivy-action` 0.33.1
+  to 0.36.0. The v4 generation targets Node 20, which GitHub has deprecated
+  and already force-runs on Node 24.
+- **Self-hosted runner requirement.** Those major versions run on Node 24 and
+  need an Actions Runner of at least 2.327.1. GitHub-hosted runners are well
+  past that, but if you consume `compliance-gates.yml` on self-hosted runners,
+  update them before moving to this release.
+- The Trivy version stays explicitly pinned to `v0.74.0` rather than taking
+  trivy-action's default, so the scan is reproducible across action bumps.
+
 ### Changed (CI)
 
 - The Trivy job now actually scans. It had two independent faults: the step

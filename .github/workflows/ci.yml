@@ -31,8 +31,8 @@ jobs:
         # adopters to run on an unpatched runtime.
         python-version: ["3.11", "3.12", "3.13"]
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python-version }}
           cache: pip
@@ -56,11 +56,11 @@ jobs:
     runs-on: ubuntu-latest
     needs: unit-tests
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.11"
           cache: pip
@@ -124,7 +124,7 @@ jobs:
         if: always()
         uses: ./.github/actions/evidence-pack
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: evidence-pack
@@ -135,8 +135,8 @@ jobs:
     name: "🏗️ Terraform Static Validation"
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: hashicorp/setup-terraform@v3
+      - uses: actions/checkout@v7
+      - uses: hashicorp/setup-terraform@v4
         with:
           terraform_version: "1.9.x"
       - name: Format check
@@ -153,15 +153,15 @@ jobs:
     name: "🛡️ Security Scan"
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Trivy filesystem scan
         # NOTE: the tag is v-prefixed; 'aquasecurity/trivy-action@0.28.0'
         # does not resolve and fails the job at setup.
-        uses: aquasecurity/trivy-action@v0.33.1
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
-          # trivy-action v0.33.1 defaults to trivy v0.65.0, which has no
-          # GitHub release (404), so its installer exits 1 and the scan is
-          # skipped entirely. Pin a version that actually ships assets.
+          # trivy-action defaults to a trivy version that has no
+          # GitHub release (v0.65.0 in v0.33.1, a 404), so its installer exits
+          # 1 and the scan is skipped entirely. Pin one that ships assets.
           version: v0.74.0
           scan-type: fs
           severity: CRITICAL,HIGH
