@@ -17,3 +17,7 @@ venv/
 reports/
 evidence/
 *.bak
+
+# Local agent context, not part of the published toolkit
+CLAUDE.md
+.claude/
