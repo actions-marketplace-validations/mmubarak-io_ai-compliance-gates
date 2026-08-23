@@ -237,6 +237,15 @@ Release notes live in [CHANGELOG.md](CHANGELOG.md). Security issues,
 **including any gate that passes when it should block**, go through the
 private channel in [SECURITY.md](SECURITY.md), not a public issue.
 
+## Disclaimer
+
+**Not legal advice.** This project maps technical controls to GDPR, UAE PDPL, and
+EU AI Act provisions for engineering convenience. Passing these gates does not by
+itself establish legal compliance — validate against the current regulations and
+qualified counsel for your jurisdiction. Provided under the MIT License, without
+warranty. The "compliant" labels in `examples/` are illustrative sample data, not
+a legal determination.
+
 ## License
 
 MIT. See [LICENSE](LICENSE).

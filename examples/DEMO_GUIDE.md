@@ -35,11 +35,11 @@ mkdir -p reports
 python scripts/pii_scanner.py --path ./examples/sample_data/customers_anonymized.csv \
   --output-format json --output-file reports/pii_scan.json
 python scripts/model_card_validator.py --path ./examples/model_cards/compliant \
-  --output-format json --output-file report./examples/model_cards/compliant.json
+  --output-format json --output-file reports/model_cards.json
 conftest test --parser hcl2 -p policy \
   infrastructure/modules/ml-platform/*.tf --output json > reports/conftest.json
 python scripts/generate_evidence_pack.py \
   --pii-report reports/pii_scan.json \
-  --model-card-report report./examples/model_cards/compliant.json \
+  --model-card-report reports/model_cards.json \
   --conftest-report reports/conftest.json
 cat evidence/evidence_pack.md
