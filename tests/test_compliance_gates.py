@@ -574,6 +574,9 @@ class TestPolicyRegister:
         # renumbering have to name the retired ids, so scanning it would make
         # honest history fail the build.
         paths += [q for q in REPO.glob("*.md") if q.name != "CHANGELOG.md"]
+        # The root action.yml is the Marketplace listing and cites policy ids
+        # of its own, but sits in no scanned directory.
+        paths += [REPO / "action.yml"]
         for q in paths:
             try:
                 found |= set(self.ID_RE.findall(q.read_text(errors="ignore")))
@@ -667,6 +670,174 @@ class TestPolicyPack:
                       "examples/terraform/non_compliant/variables.tf")
         assert "POL-PRIV-003" in r.stdout
         assert "POL-PRIV-004" in r.stdout
+
+
+# ---------------------------------------------------------------------------
+# Root action: the Marketplace listing
+# ---------------------------------------------------------------------------
+ROOT_ACTION = REPO / "action.yml"
+GATES_WORKFLOW = REPO / ".github/workflows/gates.yml"
+
+
+def _steps(action_path):
+    """{step name: step dict} for an action or the reusable workflow."""
+    doc = yaml.safe_load(Path(action_path).read_text())
+    steps = doc["runs"]["steps"] if "runs" in doc else doc["jobs"]["gates"]["steps"]
+    return {s["name"]: s for s in steps if "name" in s}
+
+
+def _flags(body):
+    return set(re.findall(r"--[a-z][a-z0-9-]+", body or ""))
+
+
+class TestRootActionListing:
+    """GitHub lists exactly one action per repository and only the action.yml
+    at its root: 'Repositories may include other actions metadata files in
+    sub-folders, but they will not be automatically listed in the marketplace.'
+    So this file is the Marketplace listing, and the four actions under
+    .github/actions/ stay reachable by `uses:` but are never listed."""
+
+    def test_root_action_exists(self):
+        assert ROOT_ACTION.is_file(), (
+            "no action.yml at the repository root, so nothing can be listed in "
+            "GitHub Marketplace"
+        )
+
+    def test_marketplace_metadata_is_complete(self):
+        doc = yaml.safe_load(ROOT_ACTION.read_text())
+        assert doc.get("name"), "Marketplace listings are titled from `name`"
+        # The listing renders `description` as the one-line blurb under the
+        # title and truncates past ~125 characters.
+        assert 0 < len(doc.get("description", "")) <= 125, len(doc.get("description", ""))
+        branding = doc.get("branding") or {}
+        assert branding.get("icon") and branding.get("color"), (
+            "Marketplace requires branding.icon and branding.color to render the tile"
+        )
+
+    def test_name_does_not_collide_with_the_gate_actions(self):
+        """A Marketplace name must be unique, and the four sub-folder actions
+        carry names of their own that a future listing might want."""
+        root = yaml.safe_load(ROOT_ACTION.read_text())["name"]
+        others = {yaml.safe_load(p.read_text())["name"]
+                  for p in (REPO / ".github/actions").glob("*/action.yml")}
+        assert root not in others
+
+
+class TestRootActionParity:
+    """The root action re-invokes the same engines as the four sub-folder
+    actions rather than delegating to them, because `uses:` cannot take a
+    dynamic ref: a delegating root action tagged v1.2.0 would still run
+    children pinned at @v1, so the version an adopter pinned would not be the
+    version that ran. The price of inlining is drift, and drift here means
+    two different gates shipping under one version tag. Hence these tests."""
+
+    # root action step -> (sub-folder action, its step, flags the umbrella
+    # deliberately does not expose)
+    GATES = {
+        "PII Scan (POL-PRIV-001)": ("pii-scan", "Scan for PII", set()),
+        "Model Card Validation (POL-GOV-002)": ("model-card-check", "Validate model cards", set()),
+        "Install conftest": ("policy-check", "Install conftest", set()),
+        "Infrastructure Policy Enforcement (POL-PRIV/SEC)": ("policy-check", "Enforce policies", set()),
+        # The umbrella always writes a pack and lets the gates themselves fail
+        # the build, so it never needs --fail-on-violation.
+        "Evidence Pack (POL-GOV-003)": ("evidence-pack", "Generate evidence pack", {"--fail-on-violation"}),
+        "Verify and expose the pack digest": ("evidence-pack", "Verify and expose the pack digest", set()),
+    }
+
+    def _twin(self, name):
+        action, step, skip = self.GATES[name]
+        return _steps(REPO / ".github/actions" / action / "action.yml")[step], skip
+
+    @pytest.mark.parametrize("name", sorted(GATES))
+    def test_same_flags_as_the_standalone_action(self, name):
+        root = _steps(ROOT_ACTION)[name]
+        twin, skip = self._twin(name)
+        assert _flags(root.get("run")) == _flags(twin.get("run")) - skip, (
+            f"root action.yml step {name!r} no longer passes the same flags as its "
+            f"standalone twin: the two would enforce different things under one tag"
+        )
+
+    @pytest.mark.parametrize("name", sorted(GATES))
+    def test_same_engine_as_the_standalone_action(self, name):
+        """Paths differ (the root action sits one level above scripts/, the
+        sub-folder ones three), so compare the engine actually invoked."""
+        engine = re.compile(r"scripts/(\w+\.py)")
+        root = _steps(ROOT_ACTION)[name]
+        twin, _ = self._twin(name)
+        assert set(engine.findall(yaml.dump(root))) == set(engine.findall(yaml.dump(twin)))
+
+    def test_conftest_pin_matches_the_policy_action(self):
+        """Two copies of a checksum-pinned download is two chances to pin the
+        wrong checksum."""
+        root = yaml.safe_load(ROOT_ACTION.read_text())["inputs"]
+        twin = yaml.safe_load((REPO / ".github/actions/policy-check/action.yml").read_text())["inputs"]
+        for key in ("conftest-version", "conftest-sha256"):
+            assert root[key]["default"] == twin[key]["default"], key
+        # The install step guards an overridden version against a stale
+        # checksum by comparing against literals; those must match too.
+        body = _steps(ROOT_ACTION)["Install conftest"]["env"]
+        assert body["PINNED_VERSION"] == root["conftest-version"]["default"]
+        assert body["PINNED_SHA256"] == root["conftest-sha256"]["default"]
+
+    def test_third_party_pins_match_the_reusable_workflow(self):
+        """Third-party actions are pinned to commit SHAs. A Dependabot bump
+        that updates gates.yml but not action.yml leaves the listing running
+        an older pin."""
+        sha = re.compile(r"uses: (actions/[\w-]+)@([0-9a-f]{40})")
+        root = dict(sha.findall(ROOT_ACTION.read_text()))
+        workflow = dict(sha.findall(GATES_WORKFLOW.read_text()))
+        shared = set(root) & set(workflow)
+        assert shared, "expected the root action and gates.yml to share pinned actions"
+        for name in shared:
+            assert root[name] == workflow[name], f"{name} is pinned to two different SHAs"
+
+    def test_shared_input_defaults_match(self):
+        root = yaml.safe_load(ROOT_ACTION.read_text())["inputs"]
+        doc = yaml.safe_load(GATES_WORKFLOW.read_text())
+        # PyYAML follows YAML 1.1, where `on:` is the boolean True, not the
+        # string "on". Every workflow file has this key under a bool.
+        workflow = doc[True]["workflow_call"]["inputs"]
+        for key in set(root) & set(workflow):
+            assert str(root[key]["default"]).lower() == str(workflow[key]["default"]).lower(), (
+                f"input {key!r} defaults differently depending on which entry point "
+                f"an adopter uses"
+            )
+
+
+class TestGateRequired:
+    """Every gate is opt-in, so asking for none of them skips all of them. The
+    evidence pack then records three NOT_RUN gates and an overall FAIL, but it
+    exits 0 by design (the gates themselves fail the build), so the job went
+    green: a compliance badge for checks that never ran. Both entry points
+    guard against that up front."""
+
+    GUARD = "Require at least one gate"
+
+    def _run_guard(self, path, **env):
+        body = _steps(path)[self.GUARD]["run"]
+        # The guard reads its inputs from env, so it is executable as-is.
+        return subprocess.run(["bash", "-c", body], capture_output=True, text=True,
+                              env={"PATH": "/usr/bin:/bin", **env})
+
+    @pytest.mark.parametrize("path", [ROOT_ACTION, GATES_WORKFLOW], ids=["action", "workflow"])
+    def test_no_gate_requested_is_misconfigured(self, path):
+        r = self._run_guard(path, DATA_PATH="", MODEL_CARDS_PATH="", TERRAFORM_PATHS="")
+        assert r.returncode == EXIT_MISCONFIGURED, r.stdout + r.stderr
+        assert "::error" in r.stdout
+
+    @pytest.mark.parametrize("path", [ROOT_ACTION, GATES_WORKFLOW], ids=["action", "workflow"])
+    @pytest.mark.parametrize("gate", ["DATA_PATH", "MODEL_CARDS_PATH", "TERRAFORM_PATHS"])
+    def test_one_gate_is_enough(self, path, gate):
+        env = {"DATA_PATH": "", "MODEL_CARDS_PATH": "", "TERRAFORM_PATHS": "", gate: "./x"}
+        r = self._run_guard(path, **env)
+        assert r.returncode == EXIT_OK, r.stdout + r.stderr
+
+    @pytest.mark.parametrize("path", [ROOT_ACTION, GATES_WORKFLOW], ids=["action", "workflow"])
+    def test_evidence_pack_still_runs_after_a_gate_fails(self, path):
+        """always() would also fire on cancellation and fabricate an audit
+        record for a run that was abandoned; !cancelled() covers failure only."""
+        step = _steps(path)["Evidence Pack (POL-GOV-003)"]
+        assert "!cancelled()" in str(step.get("if")), step.get("if")
 
 
 if __name__ == "__main__":

@@ -7,6 +7,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Adopters should pin to a release tag (`@v1`). `main` may change without notice.
 
+## [1.1.0] - 2026-08-27
+
+### Added
+
+- **A root `action.yml`, so the toolkit is listable in GitHub Marketplace.**
+  `uses: mmubarak-io/ai-compliance-gates@v1` now runs every gate in one step.
+  GitHub lists one action per repository and only the metadata file at its
+  root, so the four actions under `.github/actions/` remain usable through
+  `uses:` but were never listable; nothing about them changes. The root action
+  re-invokes the engines rather than delegating to them, because `uses:`
+  cannot take a dynamic ref: a delegating root action tagged `v1.1.0` would
+  still run children pinned at `@v1`, so the version an adopter pinned would
+  not be the version that ran. `TestRootActionParity` fails the build if the
+  two copies drift on flags, engine, conftest checksum or a pinned SHA.
+- `evidence-artifact-name` input on the root action. Two invocations in one
+  workflow run (a matrix, say) would otherwise both upload an artifact called
+  `evidence-pack`, and the second upload is rejected.
+- `docs/RELEASING.md`: the Marketplace publishing runbook and its
+  prerequisites.
+
+### Fixed: a gate that reported success without checking
+
+- **Requesting no gates is now a misconfiguration, not a pass.** Calling
+  `gates.yml` (or the new root action) with none of `data-path`,
+  `model-cards-path` or `terraform-paths` skipped every gate, wrote an
+  evidence pack recording three `NOT_RUN` gates and an overall `FAIL`, and
+  still exited `0`, because the evidence pack deliberately leaves failing the
+  build to the gates themselves. The job went green with a compliance
+  artifact attached and nothing checked. Both entry points now exit `2` up
+  front. If you call the workflow with no inputs today, it will start
+  failing; that failure is the bug being fixed.
+
+### Changed
+
+- **Every gate now reports in one pass.** A failing gate no longer skips the
+  gates after it (`!cancelled()` rather than a bare `if:`), so one run
+  surfaces every violation instead of one per iteration, and the evidence
+  pack stays complete precisely when something is wrong, which is when an
+  auditor most needs it. Nothing that passed before fails now.
+- The evidence pack and artifact upload run on `!cancelled()` instead of
+  `always()`. A cancelled run no longer fabricates an audit record for work
+  it abandoned.
+
 ## [1.0.0] - 2026-08-23
 
 First tagged release. Everything below landed before `v1`, but is listed
@@ -223,4 +266,5 @@ actually ran.
   rendered from the JSON report.
 - Reusable workflow and README examples reference `@v1` instead of `@main`.
 
+[1.1.0]: https://github.com/mmubarak-io/ai-compliance-gates/releases/tag/v1.1.0
 [1.0.0]: https://github.com/mmubarak-io/ai-compliance-gates/releases/tag/v1.0.0

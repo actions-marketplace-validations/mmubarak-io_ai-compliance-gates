@@ -107,6 +107,13 @@ Note whether your change makes a gate **stricter** or **looser**; the PR
 template asks, and stricter changes need a `CHANGELOG.md` entry so adopters
 know a previously-green build may start failing.
 
+If you touch a gate under `.github/actions/`, change the root
+[`action.yml`](action.yml) in the same commit. It is the Marketplace listing
+and runs the same engines by re-invoking them, so the two drift apart
+otherwise; `TestRootActionParity` fails the build when they do. Releasing and
+publishing are maintainer tasks, documented in
+[docs/RELEASING.md](docs/RELEASING.md).
+
 ## Security
 
 A gate that passes when it should block is a security issue, not a bug.

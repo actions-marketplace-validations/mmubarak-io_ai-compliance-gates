@@ -3,6 +3,7 @@
 *GitOps for compliant AI: every policy is an executable check that blocks the pipeline.*
 
 [![CI](https://github.com/mmubarak-io/ai-compliance-gates/actions/workflows/ci.yml/badge.svg)](https://github.com/mmubarak-io/ai-compliance-gates/actions/workflows/ci.yml)
+[![GitHub Marketplace](https://img.shields.io/badge/Marketplace-AI%20Compliance%20Gates-2ea44f?logo=github)](https://github.com/marketplace/actions/ai-compliance-gates)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/downloads/)
 
@@ -11,7 +12,19 @@ make UAE PDPL, GDPR, and EU AI Act requirements *machine-enforced* in CI,
 not paragraphs in a policy document nobody checks.
 
 ```yaml
-# .github/workflows/compliance.yml: full adoption in one job
+# .github/workflows/compliance.yml: every gate in one step
+steps:
+  - uses: actions/checkout@v4
+  - uses: mmubarak-io/ai-compliance-gates@v1
+    with:
+      data-path: ./data
+      model-cards-path: ./model_cards
+      terraform-paths: "infra/*.tf"
+```
+
+Prefer to hand over the whole job? The same pipeline is a reusable workflow:
+
+```yaml
 jobs:
   compliance:
     uses: mmubarak-io/ai-compliance-gates/.github/workflows/gates.yml@v1
@@ -20,6 +33,9 @@ jobs:
       model-cards-path: ./model_cards
       terraform-paths: "infra/*.tf"
 ```
+
+Every gate is opt-in: leave an input empty and that gate is skipped. Asking
+for no gates at all is a misconfiguration, not a pass, and exits `2`.
 
 ## Why this exists
 
@@ -43,7 +59,17 @@ dataset contains an Emirates ID, it never reaches training.
 | `policy-check` | Terraform satisfies the policy register via **OPA/Conftest**: TLS 1.2, no public access, UAE-only regions, RBAC, audit logging, retention | UAE PDPL Art. 9, 20, 22-23; GDPR Art. 5, 30, 32 |
 | `evidence-pack` | Every run emits an **auditor-facing artifact**: what was checked, against which regulation, at which commit | GDPR Art. 5(2), EU AI Act Art. 12 |
 
-Each gate is also a standalone composite action:
+There are three ways in, and they run the same engines:
+
+| Entry point | Use it when |
+|-------------|-------------|
+| `mmubarak-io/ai-compliance-gates@v1` | You want every gate in one step. This is the [Marketplace listing](https://github.com/marketplace/actions/ai-compliance-gates). |
+| `.../.github/workflows/gates.yml@v1` | You want the whole job, runner and artifact upload included. |
+| `.../.github/actions/<gate>@v1` | You want one gate, placed exactly where you need it in an existing job. |
+
+GitHub lists only the `action.yml` at a repository's root, so the four gates
+below are reachable by `uses:` but do not appear in Marketplace search. Each
+gate is a standalone composite action:
 
 ```yaml
 steps:
@@ -203,8 +229,9 @@ realistic target to run against.
 ## Repository layout
 
 ```
+├── action.yml             # Root action: every gate in one step (the Marketplace listing)
 ├── .github/
-│   ├── actions/           # Reusable composite actions (the product)
+│   ├── actions/           # The four gates as standalone composite actions
 │   └── workflows/         # ci.yml (dogfooding) + gates.yml (workflow_call)
 ├── scripts/               # Gate engines: PII scan, model cards, evidence pack
 ├── policy/                # OPA/Rego policy pack (UAE PDPL / GDPR profile)
@@ -221,7 +248,7 @@ realistic target to run against.
 ## Roadmap
 
 - [x] `v1` release tag
-- [ ] GitHub Marketplace listing for the individual actions
+- [ ] GitHub Marketplace listing (root action is ready; GitHub lists one action per repo, so the four gates cannot each have one)
 - [ ] Arabic-language PII detection (Arabic names, addresses)
 - [ ] KSA PDPL and Qatar PDPPL policy packs
 - [ ] pip-installable CLI for GitLab / Azure DevOps / pre-commit
@@ -241,7 +268,7 @@ private channel in [SECURITY.md](SECURITY.md), not a public issue.
 
 **Not legal advice.** This project maps technical controls to GDPR, UAE PDPL, and
 EU AI Act provisions for engineering convenience. Passing these gates does not by
-itself establish legal compliance — validate against the current regulations and
+itself establish legal compliance. Validate against the current regulations and
 qualified counsel for your jurisdiction. Provided under the MIT License, without
 warranty. The "compliant" labels in `examples/` are illustrative sample data, not
 a legal determination.

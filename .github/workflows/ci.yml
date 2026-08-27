@@ -163,6 +163,78 @@ jobs:
           path: evidence/
           retention-days: 90
 
+  marketplace-action:
+    name: "🏷️ Root Action (Marketplace listing)"
+    runs-on: ubuntu-latest
+    needs: unit-tests
+    # The root action.yml is the only thing GitHub lists in the Marketplace,
+    # and it re-invokes the engines rather than delegating to the four
+    # sub-folder actions. Unit tests hold the two in parity on paper; this
+    # job is the one that actually runs the listed action end to end.
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      # ---- positive path: the whole toolkit behind one `uses:` ----
+      - name: All gates, clean fixtures
+        id: gates
+        uses: ./
+        with:
+          data-path: ./examples/sample_data/customers_anonymized.csv
+          model-cards-path: ./examples/model_cards/compliant
+          terraform-paths: "infrastructure/modules/ml-platform/*.tf"
+          evidence-dir: evidence-root
+          evidence-artifact-name: evidence-pack-root-action
+
+      - name: Outputs are populated
+        env:
+          RESULT: ${{ steps.gates.outputs.overall-result }}
+          DIGEST: ${{ steps.gates.outputs.content-digest }}
+        run: |
+          set -euo pipefail
+          if [ "$RESULT" != "PASS" ]; then
+            echo "::error::clean fixtures should produce PASS, got '${RESULT}'"; exit 1
+          fi
+          if ! printf '%s' "$DIGEST" | grep -Eq '^[0-9a-f]{64}$'; then
+            echo "::error::content-digest is not a sha256: '${DIGEST}'"; exit 1
+          fi
+          echo "✅ Root action reported ${RESULT} with a verifiable digest"
+
+      # ---- negative path: asked to check nothing, it must not go green ----
+      - name: No gate requested
+        id: nogate
+        continue-on-error: true
+        uses: ./
+        with:
+          upload-evidence: "false"
+
+      - name: A run that checks nothing is a failure
+        run: |
+          set -euo pipefail
+          if [ "${{ steps.nogate.outcome }}" != "failure" ]; then
+            echo "::error::the action passed without being given a single gate to run"; exit 1
+          fi
+          echo "✅ Root action fails closed when no gate is requested"
+
+      # ---- negative path: a real violation must still block ----
+      - name: Dirty data blocks the listed action
+        id: dirty
+        continue-on-error: true
+        uses: ./
+        with:
+          data-path: ./examples/sample_data/customers.csv
+          evidence-dir: evidence-dirty
+          upload-evidence: "false"
+
+      - name: Violation blocked
+        run: |
+          set -euo pipefail
+          if [ "${{ steps.dirty.outcome }}" != "failure" ]; then
+            echo "::error::PII-laden fixture passed the listed action"; exit 1
+          fi
+          echo "✅ Root action blocked the PII-laden dataset"
+
   terraform-validate:
     name: "🏗️ Terraform Static Validation"
     runs-on: ubuntu-latest

@@ -72,6 +72,22 @@ jobs:
         with:
           fetch-depth: 0
 
+      # A run that was asked to check nothing must not report success.
+      # Without this, calling this workflow with no path inputs skips every
+      # gate, writes an evidence pack that says FAIL, and still exits green:
+      # a compliance badge for checks that never ran.
+      - name: Require at least one gate
+        env:
+          DATA_PATH: ${{ inputs.data-path }}
+          MODEL_CARDS_PATH: ${{ inputs.model-cards-path }}
+          TERRAFORM_PATHS: ${{ inputs.terraform-paths }}
+        run: |
+          set -euo pipefail
+          if [ -z "$DATA_PATH" ] && [ -z "$MODEL_CARDS_PATH" ] && [ -z "$TERRAFORM_PATHS" ]; then
+            echo "::error title=Compliance Gates Misconfigured::No gate was given anything to check. Set at least one of data-path, model-cards-path or terraform-paths."
+            exit 2
+          fi
+
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: ${{ inputs.python-version }}
@@ -86,7 +102,7 @@ jobs:
           allow-unscanned: ${{ inputs.allow-unscanned }}
 
       - name: Model Card Validation (POL-GOV-002)
-        if: inputs.model-cards-path != ''
+        if: ${{ !cancelled() && inputs.model-cards-path != '' }}
         uses: mmubarak-io/ai-compliance-gates/.github/actions/model-card-check@v1
         with:
           path: ${{ inputs.model-cards-path }}
@@ -94,7 +110,7 @@ jobs:
           allow-empty: ${{ inputs.allow-empty }}
 
       - name: Infrastructure Policy Enforcement (POL-PRIV/SEC)
-        if: inputs.terraform-paths != ''
+        if: ${{ !cancelled() && inputs.terraform-paths != '' }}
         uses: mmubarak-io/ai-compliance-gates/.github/actions/policy-check@v1
         with:
           terraform-paths: ${{ inputs.terraform-paths }}
@@ -103,11 +119,11 @@ jobs:
       # was checked and what was not, which is exactly what an auditor needs
       # from a failed run.
       - name: Evidence Pack (POL-GOV-003)
-        if: always()
+        if: ${{ !cancelled() }}
         uses: mmubarak-io/ai-compliance-gates/.github/actions/evidence-pack@v1
 
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        if: always()
+        if: ${{ !cancelled() }}
         with:
           name: evidence-pack
           path: evidence/
