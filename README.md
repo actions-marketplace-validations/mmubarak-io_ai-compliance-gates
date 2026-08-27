@@ -206,55 +206,6 @@ Generic PII scanners don't know what an Emirates ID looks like. This one does:
 | `AE_PHONE_NUMBER` | +971 / 05X mobile & landline | +971-50-123-4567 |
 | `AE_IBAN` | `AE` + 21 digits | AE07 033 1234... |
 
-## Reference infrastructure (Azure UAE North)
-
-`infrastructure/` contains a complete Terraform module for a compliant ML
-platform (storage with TLS 1.2/private access/RBAC, Key Vault, Log
-Analytics audit trail, compliance tags) that passes the full policy pack.
-Use it as a starting point or bring your own Terraform; the `policy-check`
-gate works against any HCL.
-
-It is synthetic reference material built from public sources. The `azurerm_*`
-arguments come from the [Terraform AzureRM provider
-registry](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs),
-and `uaenorth`/`uaecentral` are Azure's [published region
-names](https://learn.microsoft.com/azure/reliability/regions-list). UAE North
-appears because POL-PRIV-003 (data residency, UAE PDPL Art. 22-23) is only
-enforceable against a concrete region. It is the executable form of a public
-regulatory requirement, not a description of anyone's environment. The module
-carries no subscription, tenant or resource identifiers, and its defaults
-(`compliantml`, `dev`) are placeholders: it exists so the policy pack has a
-realistic target to run against.
-
-## Repository layout
-
-```
-├── action.yml             # Root action: every gate in one step (the Marketplace listing)
-├── .github/
-│   ├── actions/           # The four gates as standalone composite actions
-│   └── workflows/         # ci.yml (dogfooding) + gates.yml (workflow_call)
-├── scripts/               # Gate engines: PII scan, model cards, evidence pack
-├── policy/                # OPA/Rego policy pack (UAE PDPL / GDPR profile)
-├── templates/             # Policy register + compliance.config.yml
-├── infrastructure/        # Reference Terraform (Azure UAE North)
-├── examples/              # Synthetic fixtures; also the integration tests
-│   ├── sample_data/       #   clean + deliberately dirty CSVs
-│   ├── model_cards/       #   compliant + non-compliant cards
-│   └── terraform/         #   deliberately non-compliant HCL
-├── tests/                 # pytest suite
-└── docs/                  # ArchiMate architecture (drawio + svg)
-```
-
-## Roadmap
-
-- [x] `v1` release tag
-- [ ] GitHub Marketplace listing (root action is ready; GitHub lists one action per repo, so the four gates cannot each have one)
-- [ ] Arabic-language PII detection (Arabic names, addresses)
-- [ ] KSA PDPL and Qatar PDPPL policy packs
-- [ ] pip-installable CLI for GitLab / Azure DevOps / pre-commit
-- [ ] `terraform plan` JSON enforcement for deployed-state drift
-- [ ] Signed evidence packs (Sigstore/cosign attestation)
-
 ## Contributing
 
 Policy packs for new jurisdictions and region-specific PII recognizers are
@@ -271,7 +222,9 @@ EU AI Act provisions for engineering convenience. Passing these gates does not b
 itself establish legal compliance. Validate against the current regulations and
 qualified counsel for your jurisdiction. Provided under the MIT License, without
 warranty. The "compliant" labels in `examples/` are illustrative sample data, not
-a legal determination.
+a legal determination. The Terraform in `infrastructure/` is synthetic reference
+material built from public provider documentation and Azure's published region
+names, not a description of any real environment.
 
 ## License
 
